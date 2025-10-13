@@ -98,6 +98,12 @@ import React, { useState, useEffect, useRef } from "react";
       setInput("");
     };
 
+    const handleVoiceSubmit = (text) => {
+      if (!text.trim()) return;
+      sendMessage(text);
+      setInput("");
+    };
+
     // when a file is selected in FileUpload
     const handleFileSelect = (file, result) => {
       console.log("File uploaded:", file.name, result.message);
@@ -198,12 +204,14 @@ import React, { useState, useEffect, useRef } from "react";
           {/* CHAT BOX */}
           <div className="main flex flex-col gap-2 justify-center items-center w-full h-screen">
           <div className={`${activeView === "chat" ? "flex" : "hidden"} w-full h-full justify-center items-center`}>
-              <AiChat studentData={studentData}
+              <AiChat 
+                studentData={studentData}
                 messages={messages}
                 input={input}
                 setInput={setInput}
                 handleSubmit={handleSubmit}
                 boxRef={boxRef}
+                sendMessage={sendMessage}
               />  
             </div>
 

@@ -21,6 +21,7 @@ class SchoolInformationSystem:
         self.student_excel_folder = os.path.join(self.upload_folder, "student_list_excel")
         self.processed_folder = os.path.join(self.upload_folder, "processed")
         
+<<<<<<< HEAD
         # Create directories if they don't exist
         for folder in [self.base_path, self.excel, self.student_excel_folder, self.processed_folder]:
             os.makedirs(folder, exist_ok=True)
@@ -28,6 +29,9 @@ class SchoolInformationSystem:
         # Create processed folder if it doesn't exist
         os.makedirs(self.processed_folder, exist_ok=True)
         
+=======
+        # Ensure directories exist
+>>>>>>> e74c19724419e545b0b54c2248dec62962f58ba5
         print(f"📁 Looking for Excel files in: {self.student_excel_folder}")
     
     def clear_all_data(self):

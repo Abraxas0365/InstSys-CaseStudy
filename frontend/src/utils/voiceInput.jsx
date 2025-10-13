@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, use } from "react";
 
-export default function VoiceInput({ setInput, micON, handleSubmit, toggleMic  }) {
+export default function VoiceInput({ setInput, micON, sendMessage, toggleMic  }) {
   const [transcript, setTranscript] = useState("");
   const audioRef = useRef(null);
 
@@ -15,23 +15,39 @@ export default function VoiceInput({ setInput, micON, handleSubmit, toggleMic  }
 
 
   /*
-   So as the file name itself, this is the voice input Module. Now to further explain this code:
-   -So we have a micON state that is passsed from the parent component which is yung aiChat.jsx
-   -We then ask for browsers media permission sepecifically the microphone lang, then we store that as "stream"
-   -That stream is like metadata lang ng audio, not the whole media itself
-   -Then we store that to adioContextRef which is the main controller of all things audio
-   Think of it as like sound studio you have this huge board with all the audio related stuff, So thats basically audioContext
-   We took the stream then manipulate it using audioContext
-   Moving on to the source, gainNode, analyser
-   -Source is like the input, so we create a source from the stream
-   -GainNode is like volume control, we set it to 1.0 which is normal volume
-   -Analyser is like a visualizer, it gives us data about the audio frequencies
-   We connect them all together, source to gainNode to analyser to destination (which is the speakers)
-   Then we create a data array to hold the frequency data
-   We then have a function detectVoice that continuously checks the audio data
-   If the average frequency is above a certain threshold (30 in this case), we log that voice is detected
-   Finally we have cleanup code to stop the mic and disconnect everything when micON is false or component unmounts
+  MICROPHONE SETUP
+  So as the file name itself, this is the voice input Module. Now to further explain this code:
+  -So we have a micON state that is passsed from the parent component which is yung aiChat.jsx
+  -We then ask for browsers media permission sepecifically the microphone lang, then we store that as "stream"
+  -That stream is like metadata lang ng audio, not the whole media itself
+  -Then we store that to adioContextRef which is the main controller of all things audio
+  Think of it as like sound studio you have this huge board with all the audio related stuff, So thats basically audioContext
+  We took the stream then manipulate it using audioContext
+  Moving on to the source, gainNode, analyser
+  -Source is like the input, so we create a source from the stream
+  -GainNode is like volume control, we set it to 1.0 which is normal volume
+  -Analyser is like a visualizer, it gives us data about the audio frequencies
+  We connect them all together, source to gainNode to analyser to destination (which is the speakers)
+  Then we create a data array to hold the frequency data
+  We then have a function detectVoice that continuously checks the audio data
+  If the average frequency is above a certain threshold (30 in this case), we log that voice is detected
+  Finally we have cleanup code to stop the mic and disconnect everything when micON is false or component unmounts
   */
+
+   /*
+  SPEECH RECOGNITION SETUP
+  - We check if the browser supports SpeechRecognition API
+  - If supported, we create a new instance of SpeechRecognition
+  - We set it to continuous and interimResults to true so we get real-time results
+  - We set the language to English (en-US)
+  - We define onresult event handler to process the results
+  - We define onerror event handler to handle any errors
+  - We start the recognition
+  - In the onresult handler, we build the transcript from the results
+  - We update the transcript state and also call setInput to update the input field in real-time
+  - If the result is final, we clear the transcript and toggle the mic off (which stops recognition)
+  - We also have cleanup code to stop recognition and clear handlers when mic is turned off or component unmounts
+   */ 
 
   useEffect(() => {
     console.log("micON changed:", micON);
@@ -73,19 +89,24 @@ export default function VoiceInput({ setInput, micON, handleSubmit, toggleMic  }
           recognition.interimResults = true;
           recognition.lang = "en-US";
 
+          // We store the transcript in a ref so we can access it in the onresult handler
           recognition.onresult = (event) => {
             let interimTranscript  = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
               interimTranscript += event.results[i][0].transcript;
             }
+            // Then we set the transcript state and also update the input field in real-time
+            // This way the user can see what they are saying as they speak
             console.log("Transcript:", interimTranscript );
             setTranscript(interimTranscript);
             setInput(interimTranscript);
-            // handleSubmit();
-            // handleSubmit(interimTranscript);
-            if (event.results[event.results.length - 1].isFinal) {
+
+            // After setting the interim transcript, we check if the result is final
+            if (event.results[event.results.length - 1].isFinal && interimTranscript.trim() !== "") {
               console.log("Final transcript, submitting:", interimTranscript);
+              sendMessage(interimTranscript);
               setTranscript("");
+              setInput("");
               interimTranscript = "";
               toggleMic();
             }

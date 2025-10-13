@@ -4,13 +4,18 @@ import TypewriterText from '../utils/TypeWriter.jsx';
 import VoiceInput from "../utils/voiceInput.jsx";
 import "../css/chatPrompt.css";
 
-function AiChat({ messages, input, setInput, handleSubmit, boxRef, studentData }) {
+function AiChat({ messages, input, setInput, handleSubmit, boxRef, studentData, sendMessage }) {
   const [micON, setMicOn] = useState(false);
 
   // Toggles mic on and off
   const toggleMic = () => {
     setMicOn((prev) => !prev);
   };
+
+  const submitVoiceInput = (text) => {
+    sendMessage(text);
+    setInput("");
+  }
 
   // Cleanup on unmount
   useEffect(() => {
@@ -100,7 +105,7 @@ function AiChat({ messages, input, setInput, handleSubmit, boxRef, studentData }
             </form>
 
             {/* Voice Input always mounted, just reacts to micON */}
-            <VoiceInput setInput={setInput} micON={micON} handleSubmit={handleSubmit} toggleMic={toggleMic} />
+            <VoiceInput setInput={setInput} micON={micON} sendMessage={sendMessage} toggleMic={toggleMic} />
           </div>
               {/* MIC BUTTON */}
               <button

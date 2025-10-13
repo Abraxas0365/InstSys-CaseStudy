@@ -6505,55 +6505,59 @@
       "corruption_details": null
     },
     {
-      "query": "test",
+      "query": "sino si maria",
       "plan": {
         "plan": [
           {
             "step": 1,
             "thought": "AI selected the best tool on attempt 1.",
             "tool_call": {
-              "tool_name": "get_database_summary",
-              "parameters": {}
+              "tool_name": "get_person_profile",
+              "parameters": {
+                "person_name": "maria"
+              }
             }
           }
         ]
       },
-      "outcome": "SUCCESS_DIRECT",
+      "outcome": "SUCCESS_FALLBACK",
       "analyst_mode": "online",
-      "execution_mode": "primary",
-      "results_count": 1,
-      "execution_time": 1.0589280128479004,
-      "timestamp": "2025-10-12T15:09:23.296446",
-      "final_answer": "I couldn't find any relevant information based on the provided documents. [system_summary]",
+      "execution_mode": "fallback",
+      "results_count": 2,
+      "execution_time": 4.816989421844482,
+      "timestamp": "2025-10-12T12:31:26.885281",
+      "final_answer": "I'm sorry, but I couldn't find any information about Maria in the provided documents.",
       "error_message": null,
       "corruption_details": null
     },
     {
-      "query": "information that you have",
+      "query": "who is jimmy",
       "plan": {
         "plan": [
           {
             "step": 1,
             "thought": "AI selected the best tool on attempt 1.",
             "tool_call": {
-              "tool_name": "get_database_summary",
-              "parameters": {}
+              "tool_name": "get_person_profile",
+              "parameters": {
+                "person_name": "jimmy"
+              }
             }
           }
         ]
       },
-      "outcome": "SUCCESS_DIRECT",
+      "outcome": "SUCCESS_FALLBACK",
       "analyst_mode": "online",
-      "execution_mode": "primary",
-      "results_count": 1,
-      "execution_time": 1.0277726650238037,
-      "timestamp": "2025-10-12T15:09:34.637824",
-      "final_answer": "I currently have no information loaded in my database.",
+      "execution_mode": "fallback",
+      "results_count": 2,
+      "execution_time": 1.6802787780761719,
+      "timestamp": "2025-10-12T12:31:46.696484",
+      "final_answer": "I could not find any information about Jimmy in the provided documents.",
       "error_message": null,
       "corruption_details": null
     },
     {
-      "query": "your settings",
+      "query": "hello",
       "plan": {
         "plan": [
           {
@@ -6569,10 +6573,281 @@
       "outcome": "SUCCESS_DIRECT",
       "analyst_mode": "online",
       "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 1.9103529453277588,
+      "timestamp": "2025-10-12T17:34:15.864105",
+      "final_answer": "Hello! I'm an AI Data Analyst for Pambayang Dalubhasaan ng Marilao. I can help you with information about our institution, including our mission, vision, and other key details. How can I assist you today?",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "magic",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 2.5041303634643555,
+      "timestamp": "2025-10-12T17:42:32.500056",
+      "final_answer": "I don't know. The information is not available in the documents.",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "mic check",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 1.89115309715271,
+      "timestamp": "2025-10-12T18:01:09.075796",
+      "final_answer": "Mic check successful. I am ready to assist you with your queries about PDM or Pambayang Dalubhasaan ng Marilao.\n\n- I have access to institutional identity, mission, vision, and other key information about PDM. [system_summary]\n- I can provide details about the institutional identity, mission, vision, and other documents related to PDM. [collection_info]",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "pdm's mission and vision",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_school_info",
+              "parameters": {
+                "topic": "MISSION_VISION"
+              }
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
       "results_count": 1,
-      "execution_time": 1.1327199935913086,
-      "timestamp": "2025-10-12T15:09:50.006859",
-      "final_answer": "The database has no collections loaded.\n\n- The system summary indicates that there are no collections loaded in the database. [system_summary]",
+      "execution_time": 3.037625789642334,
+      "timestamp": "2025-10-12T18:01:22.116562",
+      "final_answer": "The Pambayang Dalubhasaan ng Marilao (PDM) has a clear vision and mission as outlined in its institutional identity document.\n\n- **Vision**: \"The Pambayang Dalubhasaan ng Marilao (PDM), a premier higher education institution in the region in providing quality subsidized tertiary education and industry training programs committed to produce globally competent, competitive, capable, and skillful graduates who excel in their chosen field.\" [institutional_identity_mission_vision]\n- **Mission**: \"Cognizant of the importance of contributing to the realization of national development goals and right of every citizen to quality education, PDM commits itself to the provision of quality education, and mold its students into productive and responsible citizens who are imbued with virtues, aware of their national heritage, and proud of their local culture.\" [institutional_identity_mission_vision]",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "hello",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 1.6533443927764893,
+      "timestamp": "2025-10-12T18:01:56.283583",
+      "final_answer": "Hello! I'm an AI Data Analyst for Pambayang Dalubhasaan ng Marilao. I can help you find information about our institution, including our mission, vision, and other key details. How can I assist you today?",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 2.7317004203796387,
+      "timestamp": "2025-10-12T18:02:08.867453",
+      "final_answer": "The database contains 1 collection named 'institutional_identity_mission_vision' with 3 documents. This collection includes key information such as content_type, data_type, department, document_type, and institution_name.\n\n- The database contains 1 collection `[system_summary]`.\n- Collection 'institutional_identity_mission_vision' has 3 documents. Key information includes: content_type, data_type, department, document_type, institution_name `[collection_info]`.",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "what data are loaded",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 1.767016887664795,
+      "timestamp": "2025-10-12T18:02:22.770640",
+      "final_answer": "The database contains information about the institution's mission and vision.\n\n- The database contains 1 collection.\n- The collection 'institutional_identity_mission_vision' has 3 documents. Key information includes: content_type, data_type, department, document_type, institution_name. [collection_info]",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "bscs students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "program": "BSCS",
+                "role": "student"
+              }
+            }
+          }
+        ]
+      },
+      "outcome": "FAIL_EMPTY",
+      "analyst_mode": "online",
+      "execution_mode": "fallback",
+      "results_count": 0,
+      "execution_time": 2.7545576095581055,
+      "timestamp": "2025-10-12T18:02:49.056227",
+      "final_answer": "I couldn't find any information about BSCS students in the provided documents.",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "hello",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 1.6106512546539307,
+      "timestamp": "2025-10-12T18:03:19.240247",
+      "final_answer": "Hello! I'm an AI Data Analyst for Pambayang Dalubhasaan ng Marilao. I can help you find information about our school's mission, vision, and other institutional details. How can I assist you today?",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "mag-check mic check",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 1.9788572788238525,
+      "timestamp": "2025-10-12T18:04:11.663955",
+      "final_answer": "I'm here and ready to assist you. I have analyzed the provided documents and can confirm that I'm functioning correctly. Here are the details:\n\n- The database contains 1 collection named 'institutional_identity_mission_vision' with 3 documents. [system_summary]\n- The collection includes key information such as content_type, data_type, department, document_type, and institution_name. [collection_info]",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "hello mic check",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_database_summary",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 2,
+      "execution_time": 1.7252130508422852,
+      "timestamp": "2025-10-12T18:04:27.131385",
+      "final_answer": "Hello! I'm here and ready to assist you. I have access to information about PDM or Pambayang Dalubhasaan ng Marilao, including institutional identity documents like mission, vision, and objectives. I can help with queries related to students, faculty, schedules, and academic programs. How can I assist you today?",
+      "error_message": null,
+      "corruption_details": null
+    },
+    {
+      "query": "what is pdm's mission and vision",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool on attempt 1.",
+            "tool_call": {
+              "tool_name": "get_school_info",
+              "parameters": {
+                "topic": "MISSION_VISION"
+              }
+            }
+          }
+        ]
+      },
+      "outcome": "SUCCESS_DIRECT",
+      "analyst_mode": "online",
+      "execution_mode": "primary",
+      "results_count": 1,
+      "execution_time": 2.1319241523742676,
+      "timestamp": "2025-10-12T18:05:02.010200",
+      "final_answer": "The Pambayang Dalubhasaan ng Marilao (PDM) has a clear vision and mission as outlined in its institutional identity document.\n\n- Vision: \"The Pambayang Dalubhasaan ng Marilao (PDM), a premier higher education institution in the region in providing quality subsidized tertiary education and industry training programs committed to produce globally competent, competitive, capable, and skillful graduates who excel in their chosen field.\" `[institutional_identity_mission_vision]`\n- Mission: \"Cognizant of the importance of contributing to the realization of national development goals and right of every citizen to quality education, PDM commits itself to the provision of quality education, and mold its students into productive and responsible citizens who are imbued with virtues, aware of their national heritage, and proud of their local culture.\" `[institutional_identity_mission_vision]`",
       "error_message": null,
       "corruption_details": null
     }
