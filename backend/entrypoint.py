@@ -1,6 +1,6 @@
 import uvicorn #type: ignore
 from fastapi.middleware.cors import CORSMiddleware #type: ignore
-from fastapi import FastAPI, Request, HTTPException, status#type: ignore
+from fastapi import FastAPI, Request, HTTPException#type: ignore
 from fastapi.responses import JSONResponse #type: ignore
 from web.intsys.backend.src.LLM_model import AIAnalyst
 from web.intsys.backend.src.config import Configuration
@@ -8,17 +8,22 @@ from web.intsys.backend.src.config import Configuration
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or specify domains
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ----------------------configuration----------------------
 
 config = Configuration()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     config.shutdown()
+    
+# ----------------------configuration----------------------
+    
 # ----------------------Route---------------------- 
 
 ai_analyst = None
