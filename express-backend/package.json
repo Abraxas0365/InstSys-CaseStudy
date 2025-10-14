@@ -1,0 +1,28 @@
+{
+  "name": "student-database-backend",
+  "version": "1.0.0",
+  "description": "Student Database Management System - Backend",
+  "main": "utils/main.js",
+  "scripts": {
+    "start": "node utils/run_system.js",
+    "dev": "nodemon utils/run_system.js",
+    "test": "node utils/main.js",
+    "system": "node utils/run_system.js",
+    "process-excel": "node utils/process_my_excel.js"
+  },
+  "keywords": [
+    "student",
+    "database",
+    "mongodb",
+    "excel"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^6.3.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
