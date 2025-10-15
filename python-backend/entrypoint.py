@@ -2,8 +2,8 @@ import uvicorn #type: ignore
 from fastapi.middleware.cors import CORSMiddleware #type: ignore
 from fastapi import FastAPI, Request, HTTPException#type: ignore
 from fastapi.responses import JSONResponse #type: ignore
-from web.intsys.backend.src.LLM_model import AIAnalyst
-from web.intsys.backend.src.config import Configuration
+from src.LLM_model import AIAnalyst
+from src.config import Configuration
 
 app = FastAPI()
 app.add_middleware(
