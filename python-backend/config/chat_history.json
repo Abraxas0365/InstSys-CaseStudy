@@ -1,6 +1,29 @@
 [
   {
     "role": "user",
+<<<<<<< HEAD
+    "content": "end"
+  },
+  {
+    "role": "assistant",
+    "content": "Here is the complete list of BSCS students:\n\nTotal Students Found: 30\n\n1. Ali, Charles\n2. Barnes, Mark\n3. Bridges, Mary\n4. Bright, Ryan\n5. Brooks, Christina\n6. Burton, Joe\n7. Carpenter, Michael\n8. Castro, Mary\n9. Clarke, Jacob\n10. Cox, Susan\n11. Gray, Mary\n12. Hodge, Karen\n13. Hudson, Samantha\n14. Martinez, Maria\n15. Miles, David\n16. Miles, Karen\n17. Miller, Logan\n18. Ochoa, Jaime\n19. Pace, Lee\n20. Palmer, Brian\n21. Richard, Jackie\n22. Roberts, Steven\n23. Ruiz, Erin\n24. Stone, Rebecca\n25. Sutton, Christopher\n26. Valdez, Elizabeth\n27. Walker, John\n28. Walker, Megan\n29. White, Rhonda\n30. Williams, Chloe\n\n- Student list: Found a total of 30 students, organized as follows: BSCS - Year 2 - Section A (30 students). [system_summary]"
+  },
+  {
+    "role": "user",
+    "content": "who is earl at bshm course"
+  },
+  {
+    "role": "assistant",
+    "content": "Earl Ruzzle Cruz is a student in the BSCS program at PDM.\n\n- Student profile for Cruz, Earl Ruzzle. ID: PDM-2023-003195. Program: BSCS, Year: 3, Section: A. Department: CCS. [students]"
+  },
+  {
+    "role": "user",
+    "content": "who is the student earl studying the bshm program"
+  },
+  {
+    "role": "assistant",
+    "content": "Earl Ruzzle Cruz is a student in the BSCS program at PDM.\n\n- Student profile for Cruz, Earl Ruzzle. ID: PDM-2023-003195. Program: BSCS, Year: 3, Section: A. Department: CCS. [students]"
+=======
     "content": "who is the guardian"
   },
   {
@@ -22,5 +45,6 @@
   {
     "role": "assistant",
     "content": "Taylor Hogan is the guardian of Calvin Hayes.\n\n- Guardian's name: Taylor Hogan. [students]\n- Student's full name: Calvin Hayes. [students]"
+>>>>>>> 4eda0c117e524de95ccf450126bf87fcaafffbb0
   }
 ]

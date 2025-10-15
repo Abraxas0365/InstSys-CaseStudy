@@ -6505,6 +6505,12 @@
       "corruption_details": null
     },
     {
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+      "query": "test",
+=======
+>>>>>>> Backend-Development
       "query": "sino si maria",
       "plan": {
         "plan": [
@@ -6558,6 +6564,10 @@
     },
     {
       "query": "hello",
+<<<<<<< HEAD
+=======
+>>>>>>> 4eda0c117e524de95ccf450126bf87fcaafffbb0
+>>>>>>> Backend-Development
       "plan": {
         "plan": [
           {
@@ -6573,15 +6583,36 @@
       "outcome": "SUCCESS_DIRECT",
       "analyst_mode": "online",
       "execution_mode": "primary",
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+      "results_count": 1,
+      "execution_time": 1.0589280128479004,
+      "timestamp": "2025-10-12T15:09:23.296446",
+      "final_answer": "I couldn't find any relevant information based on the provided documents. [system_summary]",
+=======
+>>>>>>> Backend-Development
       "results_count": 2,
       "execution_time": 1.9103529453277588,
       "timestamp": "2025-10-12T17:34:15.864105",
       "final_answer": "Hello! I'm an AI Data Analyst for Pambayang Dalubhasaan ng Marilao. I can help you with information about our institution, including our mission, vision, and other key details. How can I assist you today?",
+<<<<<<< HEAD
+=======
+>>>>>>> 4eda0c117e524de95ccf450126bf87fcaafffbb0
+>>>>>>> Backend-Development
       "error_message": null,
       "corruption_details": null
     },
     {
+<<<<<<< HEAD
       "query": "magic",
+=======
+<<<<<<< HEAD
+      "query": "information that you have",
+=======
+      "query": "magic",
+>>>>>>> 4eda0c117e524de95ccf450126bf87fcaafffbb0
+>>>>>>> Backend-Development
       "plan": {
         "plan": [
           {
@@ -6597,15 +6628,36 @@
       "outcome": "SUCCESS_DIRECT",
       "analyst_mode": "online",
       "execution_mode": "primary",
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+      "results_count": 1,
+      "execution_time": 1.0277726650238037,
+      "timestamp": "2025-10-12T15:09:34.637824",
+      "final_answer": "I currently have no information loaded in my database.",
+=======
+>>>>>>> Backend-Development
       "results_count": 2,
       "execution_time": 2.5041303634643555,
       "timestamp": "2025-10-12T17:42:32.500056",
       "final_answer": "I don't know. The information is not available in the documents.",
+<<<<<<< HEAD
+=======
+>>>>>>> 4eda0c117e524de95ccf450126bf87fcaafffbb0
+>>>>>>> Backend-Development
       "error_message": null,
       "corruption_details": null
     },
     {
+<<<<<<< HEAD
       "query": "mic check",
+=======
+<<<<<<< HEAD
+      "query": "your settings",
+=======
+      "query": "mic check",
+>>>>>>> 4eda0c117e524de95ccf450126bf87fcaafffbb0
+>>>>>>> Backend-Development
       "plan": {
         "plan": [
           {
@@ -6621,6 +6673,15 @@
       "outcome": "SUCCESS_DIRECT",
       "analyst_mode": "online",
       "execution_mode": "primary",
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+      "results_count": 1,
+      "execution_time": 1.1327199935913086,
+      "timestamp": "2025-10-12T15:09:50.006859",
+      "final_answer": "The database has no collections loaded.\n\n- The system summary indicates that there are no collections loaded in the database. [system_summary]",
+=======
+>>>>>>> Backend-Development
       "results_count": 2,
       "execution_time": 1.89115309715271,
       "timestamp": "2025-10-12T18:01:09.075796",
@@ -6848,6 +6909,10 @@
       "execution_time": 2.1319241523742676,
       "timestamp": "2025-10-12T18:05:02.010200",
       "final_answer": "The Pambayang Dalubhasaan ng Marilao (PDM) has a clear vision and mission as outlined in its institutional identity document.\n\n- Vision: \"The Pambayang Dalubhasaan ng Marilao (PDM), a premier higher education institution in the region in providing quality subsidized tertiary education and industry training programs committed to produce globally competent, competitive, capable, and skillful graduates who excel in their chosen field.\" `[institutional_identity_mission_vision]`\n- Mission: \"Cognizant of the importance of contributing to the realization of national development goals and right of every citizen to quality education, PDM commits itself to the provision of quality education, and mold its students into productive and responsible citizens who are imbued with virtues, aware of their national heritage, and proud of their local culture.\" `[institutional_identity_mission_vision]`",
+<<<<<<< HEAD
+=======
+>>>>>>> 4eda0c117e524de95ccf450126bf87fcaafffbb0
+>>>>>>> Backend-Development
       "error_message": null,
       "corruption_details": null
     }

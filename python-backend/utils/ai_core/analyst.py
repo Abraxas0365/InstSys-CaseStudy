@@ -1,500 +1,29 @@
-from __future__ import annotations
-import json, re, time, os
+# backend/utils/ai_core/analyst.py
+
+"""
+This module contains the main AIAnalyst class, which orchestrates the entire
+AI reasoning and tool-use pipeline.
+"""
+
+# Standard library imports
+import json
+import re
+import time
+import os
+import inspect
+import hashlib
 from typing import Dict, Any, List, Optional
-import requests
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timezone, timedelta
 
+# Third-party imports
+from pymongo import MongoClient
 
-# -------------------------------
-# Training System
-# -------------------------------
-
-
-class TrainingSystem:
-    """
-    Manages the collection and analysis of query data to improve AI performance over time.
-    It records successful and failed queries, extracts patterns, and provides insights.
-    """
-    def __init__(self, training_file: str = "config/training_data.json"):
-        """
-        Initializes the training system.
-
-        Args:
-            training_file: The name of the JSON file used to store training data.
-        """
-        self.training_file = training_file
-        self.training_data = self._load_training_data()
-        
-    def _load_training_data(self) -> dict:
-        """
-        Loads training data from the specified JSON file.
-        If the file does not exist or is empty, it creates a new, correct data structure.
-        """
-        try:
-            with open(self.training_file, 'r', encoding='utf-8') as f:
-                # Check for an empty file to prevent a crash
-                if os.path.getsize(self.training_file) == 0:
-                    raise FileNotFoundError # Treat empty file as a new file
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            # This is the corrected, modern data structure
-            return {
-                "query_log": [],
-                "query_patterns": {},
-                "metadata": {"created": datetime.now().isoformat(), "version": "1.0"}
-            }
-    
-    def _save_training_data(self):
-        """Saves the current state of the training data to the JSON file."""
-        with open(self.training_file, 'w', encoding='utf-8') as f:
-            json.dump(self.training_data, f, indent=2, ensure_ascii=False)
-    
-    def record_query_result(self, query: str, plan: dict, results_count: int,
-                            execution_time: float, error_msg: str = None,
-                            execution_mode: str = "unknown", outcome: str = "FAIL_UNKNOWN",
-                            analyst_mode: str = "unknown", final_answer: str = "",
-                            corruption_details: Optional[List[str]] = None):
-        """
-        [UPGRADED] Records the outcome of a single query with a detailed outcome status.
-        """
-        record = {
-            "query": query,
-            "plan": plan,
-            "outcome": outcome,
-            "analyst_mode": analyst_mode,
-            "execution_mode": execution_mode,
-            "results_count": results_count,
-            "execution_time": execution_time,
-            "timestamp": datetime.now().isoformat(),
-            "final_answer": final_answer,  # <-- ADDED THIS LINE
-            "error_message": error_msg,
-            "corruption_details": corruption_details
-        }
-        self.training_data["query_log"].append(record)
-        self._save_training_data()
-    
-    def get_training_insights(self) -> str:
-        """
-        [UPGRADED] Generates a highly detailed summary of training data, including a breakdown by outcome.
-        """
-        from collections import Counter
-        
-        total_queries = len(self.training_data["query_log"])
-        if total_queries == 0:
-            return "No training data recorded yet."
-
-        outcome_counts = Counter(r['outcome'] for r in self.training_data["query_log"])
-        
-        direct_success_count = outcome_counts.get("SUCCESS_DIRECT", 0)
-        direct_success_rate = (direct_success_count / total_queries) * 100 if total_queries > 0 else 0
-        
-        insights = [
-            f"Training Summary ({total_queries} total queries):",
-            f"  - Direct Success Rate (Primary tools worked): {direct_success_rate:.1f}%",
-            "",
-            "Detailed Outcome Breakdown:"
-        ]
-        
-        outcome_descriptions = {
-            "SUCCESS_DIRECT": "Primary tool succeeded.",
-            "SUCCESS_FALLBACK": "Primary tool failed, but fallback search found results.",
-            "FAIL_EMPTY": "Tool and fallback ran correctly but found no data.",
-            "FAIL_PLANNER": "AI Planner failed to choose a tool.",
-            "FAIL_EXECUTION": "An unexpected error occurred during tool execution.",
-            "FAIL_UNKNOWN": "An unknown failure occurred."
-        }
-
-        for outcome, count in outcome_counts.most_common():
-            percentage = (count / total_queries) * 100
-            description = outcome_descriptions.get(outcome, "No description.")
-            insights.append(f"   - {outcome}: {count} queries ({percentage:.1f}%) - {description}")
-            
-        return "\n".join(insights)
-    
-    def _extract_query_patterns(self, query: str, plan: dict, success: bool):
-        """
-        Analyzes a query to identify and categorize its structural patterns.
-        This helps in understanding which types of queries succeed or fail.
-        """
-        query_lower = query.lower()
-        
-        patterns = {
-            "has_year_filter": any(year in query_lower for year in ['1st', '2nd', '3rd', '4th', 'year 1', 'year 2']),
-            "has_program_filter": any(prog in query_lower for prog in ['bscs', 'bstm', 'computer science', 'tourism']),
-            "is_random_request": 'random' in query_lower,
-            "is_multi_condition": any(word in query_lower for word in ['and', 'or', 'both']),
-            "has_name_search": any(char.isupper() for char in query if char.isalpha()),
-            "plan_steps": len(plan.get('plan', [])) if isinstance(plan, dict) else 0
-        }
-        
-        pattern_key = f"year:{patterns['has_year_filter']}_prog:{patterns['has_program_filter']}_rand:{patterns['is_random_request']}_multi:{patterns['is_multi_condition']}"
-        
-        if pattern_key not in self.training_data["query_patterns"]:
-            self.training_data["query_patterns"][pattern_key] = {
-                "successful": 0, "failed": 0, "examples": []
-            }
-        
-        if success:
-            self.training_data["query_patterns"][pattern_key]["successful"] += 1
-        else:
-            self.training_data["query_patterns"][pattern_key]["failed"] += 1
-        
-        examples = self.training_data["query_patterns"][pattern_key]["examples"]
-        examples.append({"query": query, "success": success})
-        if len(examples) > 5:
-            examples.pop(0)
-    
-    def get_training_insights(self) -> str:
-        """
-        Generates a human-readable summary of the training data, including success rates
-        and performance analysis by query pattern.
-        """
-        total_success = len(self.training_data["successful_queries"])
-        total_failed = len(self.training_data["failed_queries"])
-        success_rate = total_success / (total_success + total_failed) * 100 if (total_success + total_failed) > 0 else 0
-        
-        insights = [
-            f"Training Summary:",
-            f"   - Success Rate: {success_rate:.1f}% ({total_success}/{total_success + total_failed})",
-            f"   - Successful Queries: {total_success}",
-            f"   - Failed Queries: {total_failed}",
-            "",
-            "Pattern Analysis:"
-        ]
-        
-        for pattern, data in self.training_data["query_patterns"].items():
-            total = data["successful"] + data["failed"]
-            pattern_success = data["successful"] / total * 100 if total > 0 else 0
-            insights.append(f"   - {pattern}: {pattern_success:.1f}% success ({data['successful']}/{total})")
-        
-        return "\n".join(insights)
-    
-    def suggest_plan_improvements(self, query: str) -> Optional[dict]:
-        """
-        Suggests an improved execution plan based on identified common failure patterns.
-        """
-        query_lower = query.lower()
-        
-        if 'random' in query_lower and ('and' in query_lower or 'or' in query_lower):
-            return {
-                "suggestion": "For random queries with multiple conditions, use separate steps instead of complex filters",
-                "recommended_approach": "Split into individual searches per condition"
-            }
-        
-        return None
-
-# -------------------------------
-# LLM Service (with retries)
-# -------------------------------
-
-class LLMService:
-    """
-    A client for interacting with Large Language Model APIs (e.g., Mistral, Ollama).
-    It handles request preparation, execution, and retries.
-    """
-    def __init__(self, config: dict):
-        """
-        Initializes the LLM service with configuration settings.
-
-        Args:
-            config: A dictionary containing API keys, URLs, and model names.
-        """
-        self.api_mode = config.get('api_mode', 'online')
-        self.debug_mode = config.get('debug_mode', False)
-        self.mistral_api_key = config.get('mistral_api_key')
-        self.mistral_api_url = config.get('mistral_api_url', 'https://api.mistral.ai/v1/chat/completions')
-        self.ollama_api_url = config.get('ollama_api_url', 'http://localhost:11434/api/chat')
-        self.planner_model = config.get('planner_model')
-        self.synth_model   = config.get('synth_model')
-
-    def _prepare_request(self, messages: list, json_mode: bool, phase: str = "planner"):
-        """
-        Constructs the appropriate API request (URL, headers, payload) based on the
-        configured API mode (online/offline) and whether JSON output is required.
-        """
-        headers, payload, api_url = {}, {}, ""
-        model_override = self.planner_model if phase == "planner" else self.synth_model
-
-        if self.api_mode == 'online':
-            api_url = self.mistral_api_url
-            headers = {"Authorization": f"Bearer {self.mistral_api_key}", "Content-Type": "application/json"}
-            payload = {"model": model_override or "mistral-small-latest", "messages": messages}
-            if json_mode:
-                payload["response_format"] = {"type": "json_object"}
-        else: # Handles 'offline' mode
-            api_url = self.ollama_api_url
-            headers = {"Content-Type": "application/json"}
-            payload = {"model": model_override or "mistral:instruct", "messages": messages, "stream": False}
-            if json_mode:
-                payload["format"] = "json"
-                # Add a forceful instruction for Ollama to ensure JSON output
-                if messages and messages[0].get("role") == "system":
-                    messages[0]["content"] += (
-                        "\n\nIMPORTANT: Your response MUST be a single, valid JSON object and nothing else. "
-                        "Do not include any text, explanations, or markdown formatting before or after the JSON."
-                    )
-        return api_url, headers, payload
-
-    def execute(self, *, system_prompt: str, user_prompt: str, json_mode: bool = False,
-                history: Optional[List[dict]] = None, retries: int = 2, phase: str = "planner") -> str:
-        """
-        Executes a request to the configured LLM API with retry logic.
-
-        Args:
-            system_prompt: The system-level instructions for the AI.
-            user_prompt: The user's query or request.
-            json_mode: If True, requests a JSON object as the response.
-            history: A list of previous conversation turns.
-            retries: The number of times to retry the request on failure.
-            phase: The current phase ('planner' or 'synth') to select the correct model.
-
-        Returns:
-            The content of the LLM's response as a string.
-        """
-        # Assemble messages in the correct order: system, history, then user.
-        messages = [{"role": "system", "content": system_prompt}]
-        if history:
-            messages.extend(history)
-        messages.append({"role": "user", "content": user_prompt})
-
-        api_url, headers, payload = self._prepare_request(messages, json_mode, phase=phase)
-        if not api_url:
-            return "Configuration Error: API URL is not set."
-
-        if self.debug_mode:
-            print(f"LLMService -> {self.api_mode.upper()} | phase={phase} | json={json_mode}")
-
-        last_err = None
-        for attempt in range(retries + 1):
-            try:
-                payload["messages"] = messages 
-                resp = requests.post(api_url, headers=headers, data=json.dumps(payload), timeout=360)
-                resp.raise_for_status()
-                rj = resp.json()
-                if 'choices' in rj and rj['choices']:
-                    return rj['choices'][0]['message']['content'].strip()
-                if 'message' in rj and 'content' in rj['message']:
-                    return rj['message']['content'].strip()
-                raise ValueError("No content in LLM response")
-            except Exception as e:
-                last_err = e
-                if self.debug_mode:
-                    print(f"LLM attempt {attempt+1}/{retries+1} failed: {e}")
-                if attempt < retries:
-                    time.sleep(1)
-                    
-        return f"Error: Could not connect to the AI service. Details: {last_err}"
-
-# -------------------------------
-# Prompts
-# -------------------------------
-
-PROMPT_TEMPLATES = {
-    "planner_agent": r"""
-        You are a **Planner AI** of PDM or Pambayang Dalubhasaan ng Marilao. Your only job is to map a user query to a single tool call from the available tools below. You MUST ALWAYS respond with a **single valid JSON object**.
-
-        --- ABSOLUTE ROUTING RULE ---
-        1. If the user's query CONTAINS A PERSON'S NAME (e.g., partial name, full name), you MUST use a tool from the "Name-Based Search" category. **CRITICAL: Descriptive words like 'tallest', 'smartest', 'busiest', or 'oldest' are NOT names.**
-        2. If the user's query asks for people based on a filter, description, or category (e.g., "all students", "faculty", "who is the tallest member"), you MUST use a tool from the "Filter-Based Search" category.
-
-        You MUST evaluate the tools by these categories.
-
-        When using tools that accept filters (like `find_people` or `query_curriculum`), you can use the following known values. Using these exact values will improve accuracy.
-        --- AVAILABLE DATABASE FILTERS ---
-        - Available Programs: {all_programs_list}
-        - Available Departments: {all_departments_list}
-        - Available Staff Positions: {all_positions_list}
-        - Available Employment Statuses: {all_statuses_list}
-        - Available School Info Topics: {all_doc_types_list}
-
-        --- CATEGORY 1: Name-Based Search Tools (ONLY IF THE name IS in the query) ---
-        - `answer_question_about_person(person_name: str, question: str)`: **PRIMARY TOOL.** You **MUST** use this tool if the query contains a person's name AND asks for a **specific fact** (e.g., "what is the schedule of...", "phone number for...", "religion of...").
-        - `get_person_profile(person_name: str)`: **GENERAL LOOKUP.** Use this tool ONLY for **broad, open-ended queries** about a person, such as "who is -name-?" or "tell me about -name-". If the user asks a specific question, you must use `answer_question_about_person` instead.
-        - `get_data_by_id(pdm_id: str)`: 
-          **Function:** Retrieves a profile using a unique PDM ID.
-          **Use Case:** You **MUST** use this tool if the user's query contains a specific PDM-style ID (e.g., "PDM-XXXX-XXXX", "profile for PDM-XXXX-XXXX"). This is the most precise way to find a person.
-
-        --- CATEGORY 2: Filter-Based Search Tools (NO name is in the query) ---
-        - `find_people(role: str, program: str, year_level: int, department: str)`: You **MUST** use this tool **ONLY** when the user is searching for a group of people using **filters** like program, role, or department, and **NO name is provided** (e.g., "show me all bscs students").
-
-
-        --- CATEGORY 3: Can Be Used with or Without a Name ---
-        
-        - `get_person_schedule(person_name: str, program: str, year_level: int)`: You **MUST** use this for any query containing keywords like **'schedule', 'classes', or 'timetable'**. It works for a specific person by name or for a group by program/year. 
-        - `get_student_grades(student_name: str, program: str, year_level: int)`: **Retrieves student grades.** You **MUST** use this for any query containing keywords like **'grades', 'GWA', 'performance'**, or questions like 'who is the smartest student'. For broad, analytical questions like "who is the smartest student?", you **MUST** call this tool with **empty parameters**. 
-          **Use Cases for 'get_student_grades(student_name: str, program: str, year_level: int)':
-        - **By Name:** To find grades for a specific student, provide their name in the `student_name` parameter (e.g., 'grades of -name-').
-        - **By Group:** To find grades for a group, provide filters like `program` and `year_level` (e.g., 'grades for bscs 1st year').
-        - **For Analysis:** For analytical queries like "who is the smartest student?", extract any available filters (like program or year) but leave the `student_name` parameter empty. If no filters are present in the query, call the tool with all parameters empty.
-        - `get_adviser_info(program: str, year_level: int)`: Use for finding the adviser of a group defined by filters.
-
-        
-        --- CATEGORY 4: Tools for Comparing Two Named People ---
-
-        - `compare_schedules(person_a_name: str, person_b_name: str)`: Use when comparing the schedules of two named people.
-
-        --- CATEGORY 5: General School Tools (What about the school itself?) ---
-        - `get_school_info(topic: str)`: 
-          **Function:** Retrieves core institutional identity documents.
-          **Use Case:** You **MUST** use this tool ONLY for queries about the school's **'mission', 'vision', 'history', or 'objectives'**. Anything about the school's identity itself.
-
-        - `get_database_summary()`: 
-          **Function:** Provides a summary of all data collections in the database.
-          **Use Case:** Use this ONLY for meta-questions about the database itself, such as **'what data do you have?'** or **'what can you tell me about?'** or **'what do you know?'**. Do NOT use this for mission, vision, or history.
-          
-        - `query_curriculum(program: str, year_level: int)`: 
-          **Function:** Provides information about academic programs This also includes the guides and tips for the programs and courses in the school.
-          **Use Case:** Use this ONLY for questions about **'courses', 'subjects', 'curriculum', or academic programs**. Do NOT use this for mission, vision, or history.
-        
-        EXAMPLE 1 (Ambiguous Name -> get_person_profile):
-        User Query: "who is -name-"
-        Your JSON Response:
-        {{
-            "tool_name": "get_person_profile",
-            "parameters": {{
-                "person_name": "-name"
-            }}
-        }}
-        ---
-        EXAMPLE 2 (No Name, Filter -> find_people):
-        User Query: "show me all bscs students"
-        Your JSON Response:
-        {{
-            "tool_name": "find_people",
-            "parameters": {{
-                "program": "BSCS",
-                "role": "student"
-            }}
-        }}
-
-        EXAMPLE 3 (Schedule for a Group):
-        User Query: "what is the schedule of bscs year 2"
-        Your JSON Response:
-        {{
-            "tool_name": "get_person_schedule",
-            "parameters": {{
-                "program": "BSCS",
-                "year_level": 2
-            }}
-        }}
-
-        EXAMPLE 4 (Complete List Request -> High n_results):
-        User Query: "show me all bsit 2nd year students"
-        Your JSON Response:
-        {{
-            "tool_name": "find_people",
-            "parameters": {{
-                "program": "BSIT",
-                "year_level": 2,
-                "role": "student",
-                "n_results": 1000
-            }}
-        }}
-
-        EXAMPLE 5 (School Program/Course Inquiry):
-        User Query: "what is the courses or programs of pdm?"
-        Your JSON Response:
-        {{
-            "tool_name": "query_curriculum",
-            "parameters": {{
-                "program": ""
-            }}
-        }}
-        ---
-        {dynamic_examples}
-        ---
-        CRITICAL FINAL INSTRUCTION:
-        Your entire response MUST be a single, raw JSON object containing "tool_name" and "parameters".
-        """,
-    "final_synthesizer": r"""
-        ROLE:
-        You are a precise and factual AI Data Analyst for a school named PDM or Pambayang Dalubhasaan ng Marilao.
-
-        PRIMARY GOAL:
-        Directly answer the user's query by analyzing only the provided Factual Documents.
-
-
-        
-
-        CORE INSTRUCTIONS:
-        1. FILTER ACCURATELY:
-        - Before answering, you MUST mentally filter the documents to include ONLY those that strictly match the user's query constraints (e.g., 'full-time',). Your answer must be based ONLY on this filtered data.
-
-        2. VERBATIM WHEN APPROPRIATE:
-        - For requests that seek formal institutional content (examples: mission, vision, objectives, history, official policies, charters), prefer to present the original document text verbatim when it exists in the Factual Documents.
-        - If multiple distinct versions of the same type exist, present each version separately and label its source.
-        - If the original text is missing or truncated, explicitly say so and provide the closest matching excerpt(s) with their sources.
-
-        3. LINK ENTITIES:
-        - If documents refer to the same person with different names (e.g., 'Dr. Cruz' and 'Professor John Cruz'), combine their information.
-
-        4. INFER CONNECTIONS:
-        - If a student's profile and a class schedule document share the same `program`, `year_level`, and `section`, you MUST state that the schedule applies to that student.
-
-        5. ANALYZE AND CALCULATE:
-        - You MUST perform necessary analysis to answer the query. If the user asks "who is the smartest?", you MUST analyze the provided grades (like GWA) and declare a winner. **CRITICAL RULE FOR GRADES: For General Weighted Average (GWA), a LOWER number is BETTER.** The student with the lowest GWA is the smartest.
-
-        6. CITE EVERYTHING:
-        - You MUST append a source citation `[source_collection_name]` to every piece of information you provide.
-
-        7. FULL LISTS ARE MANDATORY IF THE QUERY INDICATES IT:
-        - If the user's query contains words like "list", "all", "complete list", or "show me" or similar words, you MUST return every single unique person or item found that matches what the user wants in the Factual Documents. Do not summarize, shorten, or omit any entries as long as it matches from your final answer.
-
-        OUTPUT RULES (Strict):
-        - START WITH THE ANSWER: Put the direct answer first — one or two sentences that directly respond to the query.
-        - DO NOT SHOW YOUR WORK: Do not include internal analysis, step-by-step reasoning, or process notes. Do not include sections like "Analysis", "Conclusion", "Summary:", or "Note:". Do not explain your step-by-step process.
-        - PROVIDE DETAILS: After the opening answer, give a short bulleted list of supporting facts, each with its source tag.
-        - FORMAT FOR FORMAL DOCUMENTS: When returning institutional text (mission/vision/objectives/history), label each returned text (e.g., "Mission:", "Vision:") and present the text verbatim in quotes or blockquote form, followed by the source tag.
-        - HUMILITY: If the Factual Documents do not contain the information needed to answer the user's query, YOU MUST NOT GUESS. Apologize and state that the information is not available in the documents. It is better to say "I don't know" than to provide an incorrect answer.
-        - ORGANIZE: Keep the response clean, structured, and professional. If suitable, prefer bullet points for clarity.
-
-
-        --- QUERY SPECIAL CASES: INDIRECT ANSWERS ---
-        Sometimes, the Factual Documents do not directly answer the user's original question (e.g., about books, health, etc.), but instead provide information about a **person who can help**. This happens when the Planner has used the `find_people` tool as a general-purpose search. In this specific case, your primary goal changes:
-        2. Introduce the person who was found and explain WHY they are relevant )
-        3. Provide the details of that person from the Factual Documents.
-
-
-        --- HANDLING SPECIFIC DOCUMENT TYPES ---
-        - If a document's `source_collection` is `student_list_summary`, it contains a complete, pre-formatted list.
-        - Your ONLY task is to present this information to the user.
-        - You MUST copy the "Total Students Found" line and the ENTIRE numbered list from the document's content VERBATIM.
-        - DO NOT summarize, shorten, paraphrase, or truncate the list.
-        - Your final output should start with a brief introductory sentence and then present the complete, numbered list exactly as provided in the document.
-
-
-        SPECIAL RULE, USE ONLY FOR GRADES RELATED QUERIES:
-        - If the user asks "who is the smartest?", you MUST determine the winner based on the General Weighted Average (GWA).
-        - The rule for GWA is: A LOWER GWA is BETTER.
-        - You MUST explicitly state that a lower GWA is better in your reasoning and select the person with the LOWEST GWA as the "smartest". There are no exceptions to this rule.
-        - For example : if we have gwa list of 3.1, 5.2, 1.5, 1.5 is the smartest.
-        - Do not make up any information, only this rule on student related queries.
-
-        NEW GUIDELINE ADDED:
-        If the Factual Documents are from the `get_database_summary` tool, your primary goal is to answer "what do you know?" in a natural, conversational way. Do NOT just list the raw collection names. Instead, you MUST interpret the collection names and fields to create a rich summary of your capabilities.
-        - Synthesize Categories: Group the collections into logical categories like "Student Information," "Faculty & Staff," "Schedules," and "Academic Programs."
-        - Provide Specific Examples: For each category, you MUST mention a few specific examples from the data to make your summary more helpful. For instance, mention a few actual program names (like 'BSCS' or 'BSIT') or staff positions (like 'Librarian' or 'Professor') that you see.
-
-        ---
-        HANDLING SPECIAL CASES:
-
-        - If `status` is `empty`: State that you could not find the requested information.
-        - If `status` is `error`: State that there was a technical problem retrieving the data.
-        
-        ---
-        Factual Documents:
-        {context}
-        ---
-        User's Query:
-        {query}
-        ---
-        Your direct and concise analysis:
-        """,
-}
-
-# -------------------------------
-# AIAnalyst (Planner + Synthesizer)
-# -------------------------------
+# Local (ai_core) imports
+from .database import MongoCollectionAdapter
+from .llm_service import LLMService
+from .prompts import PROMPT_TEMPLATES
+from .training import TrainingSystem
 
 class AIAnalyst:
     """
@@ -519,8 +48,22 @@ class AIAnalyst:
         
         # Load chat settings from the config file
         chat_cfg = config.get('chat_settings', {})
-        self.history_file = chat_cfg.get('history_file', 'chat_history.json')
+        # In-memory cache for active sessions to reduce DB reads
+        self.sessions_cache = {}
         self.max_history_turns = chat_cfg.get('max_history_turns', 2)
+        # Connection to the new MongoDB collection for persistent sessions
+        self.sessions_collection = self.mongo_db["sessions"]
+        # --- ADD THESE NEW LINES ---
+        self.tool_cache_collection = self.mongo_db["tool_cache"]
+        # Defines how long (in seconds) to cache the results of specific tools
+        self.tool_cache_ttl = {
+            "get_person_schedule": 3600,      # 1 hour
+            "find_people": 86400,             # 1 day
+            "get_person_profile": 86400,      # 1 day
+            "get_student_grades": 3600,       # 1 hour
+            "query_curriculum": 604800        # 1 week
+            
+        }
 
         # Explicitly set the api_mode for each configuration
         online_cfg['api_mode'] = 'online'
@@ -570,6 +113,7 @@ class AIAnalyst:
 
         # Map tool names to their corresponding methods
         self.available_tools = {
+            "answer_conversational_query": self.answer_conversational_query,
             "get_data_by_id": self.get_data_by_id,
             "get_school_info": self.get_school_info,
             "get_database_summary" : self.get_database_summary,
@@ -585,8 +129,150 @@ class AIAnalyst:
             "answer_question_about_person": self.answer_question_about_person,
             "get_student_grades": self.get_student_grades,
             "query_curriculum": self.query_curriculum,
+        }
+
+
+    def _get_or_create_session(self, session_id: str) -> dict:
+        """
+        [MODIFIED FOR MONGO] Retrieves a session from the in-memory cache,
+        the database, or creates a new one.
+        """
+        # 1. Check the fast in-memory cache first
+        if session_id in self.sessions_cache:
+            return self.sessions_cache[session_id]
+
+        # 2. If not in cache, check the database
+        self.debug(f"Session {session_id} not in cache. Querying MongoDB...")
+        session_doc = self.sessions_collection.find_one({"session_id": session_id})
+
+        if session_doc:
+            # 3. If found in DB, load it into the cache and return it
+            self.sessions_cache[session_id] = session_doc
+            return session_doc
+        else:
+            # 4. If it's a new session, create a new object in the cache
+            self.debug(f"Creating new session: {session_id}")
+            new_session = {
+                "session_id": session_id,
+                "chat_history": [],
+                "conversation_summary": "", 
+                "mentioned_entities": [],
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
             }
+            self.sessions_cache[session_id] = new_session
+            return new_session
+
+    def _update_session_history(self, session_id: str, user_query: str, ai_response: str):
+        """
+        [MODIFIED FOR MONGO] Adds the latest exchange to the session's chat history,
+        trims it, and saves the entire session object back to MongoDB.
+        """
+        # Get the current session object (from cache or DB)
+        session = self._get_or_create_session(session_id)
         
+        # Append the new messages
+        session["chat_history"].append({"role": "user", "content": user_query})
+        session["chat_history"].append({"role": "assistant", "content": ai_response})
+        
+        # Trim the history list (sliding window)
+        history_limit = self.max_history_turns * 2
+        if history_limit > 0 and len(session["chat_history"]) > history_limit:
+            session["chat_history"] = session["chat_history"][-history_limit:]
+
+        # Update the timestamp
+        session["updated_at"] = datetime.now(timezone.utc)
+
+        # Save the entire updated session object to MongoDB
+        self.sessions_collection.update_one(
+            {"session_id": session_id},
+            {"$set": session},
+            upsert=True  # Creates the document if it doesn't exist
+        )
+        self.debug(f"Session {session_id} saved to MongoDB.")
+
+
+    # Add this new method anywhere inside the AIAnalyst class in AI.py
+
+
+    
+
+    def _summarize_conversation(self, session_id: str):
+        """
+        Calls an LLM to create or update a conversation summary for a given session.
+        """
+        self.debug(f"Updating conversation summary for session: {session_id}")
+        session = self._get_or_create_session(session_id)
+        
+        # We need at least one full user/AI turn to create a summary.
+        if len(session["chat_history"]) < 2:
+            return
+
+        previous_summary = session.get("conversation_summary", "None.")
+        
+        # Get the last user/AI exchange
+        latest_exchange = "\n".join([
+            f"User: {session['chat_history'][-2]['content']}",
+            f"Assistant: {session['chat_history'][-1]['content']}"
+        ])
+
+        # Prepare the prompt for the summarizer LLM
+        prompt = PROMPT_TEMPLATES["conversation_summarizer"].format(
+            summary=previous_summary,
+            latest_exchange=latest_exchange
+        )
+
+        # Use the planner_llm (typically a faster/cheaper model) for this quick task
+        new_summary = self.planner_llm.execute(
+            system_prompt="You are a conversation summarizer.",
+            user_prompt=prompt,
+            phase="synth" # Use synth phase if it points to a faster model
+        )
+
+        # Update the session object with the new summary and save it to the database
+        if new_summary and "error" not in new_summary.lower():
+            session["conversation_summary"] = new_summary
+            session["updated_at"] = datetime.now(timezone.utc)
+            self.sessions_collection.update_one(
+                {"session_id": session_id},
+                {"$set": {
+                    "conversation_summary": new_summary,
+                    "updated_at": session["updated_at"]
+                }},
+                upsert=True
+            )
+            self.debug(f"New summary for {session_id}: {new_summary}")
+
+
+    # Add this new method anywhere inside the AIAnalyst class in AI.py
+
+    def _add_entity_to_session(self, session_id: str, entity_name: str):
+        """
+        Adds a new entity to the session's memory and keeps the list trimmed.
+        """
+        session = self._get_or_create_session(session_id)
+        
+        # Add the new entity to the end of the list
+        session["mentioned_entities"].append(entity_name)
+        
+        # Keep only the last 5 mentioned entities to keep the list relevant
+        if len(session["mentioned_entities"]) > 5:
+            session["mentioned_entities"] = session["mentioned_entities"][-5:]
+            
+        # Persist the change to the database
+        session["updated_at"] = datetime.now(timezone.utc)
+        self.sessions_collection.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "mentioned_entities": session["mentioned_entities"],
+                "updated_at": session["updated_at"]
+            }},
+            upsert=True
+        )
+        self.debug(f"Updated entity memory for {session_id}: {session['mentioned_entities']}")
+
+
+    
         
 
     def _get_unique_document_types(self) -> List[str]:
@@ -594,6 +280,9 @@ class AIAnalyst:
         self.debug("🔎 Discovering unique document types from the database...")
         # This calls the existing helper method to find unique values for a specific field
         return self._get_unique_values_for_field(['document_type'])
+    
+
+
 
 
     def _get_unique_faculty_types(self) -> List[str]:
@@ -647,6 +336,7 @@ class AIAnalyst:
                 self.debug(f"⚠️ Error during _get_unique_values_for_field in {name}: {e}")
 
         return sorted(list(unique_values))
+        
     
 
     def get_data_by_id(self, pdm_id: str) -> List[dict]:
@@ -675,6 +365,20 @@ class AIAnalyst:
         docs_a = self.get_person_schedule(person_name=person_a_name)
         docs_b = self.get_person_schedule(person_name=person_b_name)
         return docs_a + docs_b
+    
+
+    # Add this new method inside the AIAnalyst class
+    
+    def answer_conversational_query(self) -> list[dict]:
+        """
+        A simple tool that acknowledges a conversational query (like a greeting).
+        It returns a placeholder document that signals a standard response is needed.
+        """
+        return [{
+            "source_collection": "conversational_response",
+            "content": "The user provided a conversational query. A standard greeting is appropriate.",
+            "metadata": {"status": "success"}
+        }]
     
     def get_school_info(self, topic: Any = None) -> List[dict]:
         """
@@ -1095,8 +799,11 @@ class AIAnalyst:
             if program: filters['program'] = program
             if year_level: filters['year_level'] = year_level
             if section: filters['section'] = section
+            
+            # This is safer than a wildcard search.
             if not filters and is_student_query:
-                return self.search_database(query_text="student", collection_filter=collection_filter)
+                student_only_filter = {"student_id": {"$exists": True}}
+                return self.search_database(filters=student_only_filter, collection_filter=collection_filter)
             
             # If it's a student query but no specific filters were found, search all students.
             if not filters and not name:
@@ -1463,20 +1170,29 @@ class AIAnalyst:
                 resolved_aliases.add(p_name)
                 if len(p_name) > len(primary_name): primary_name = p_name
 
+        # --- PATCH START: INTELLIGENT NAME MATCHING ---
         # 5. Filter the initial results to keep only definitive matches
         matching_docs = []
         query_parts = set(cleaned_query.split()) 
         
         for doc in initial_results:
-            full_name_in_doc = doc.get("metadata", {}).get("full_name", "").lower()
-            # If all parts of the searched name exist in the document's full name, keep it.
-            if all(part in full_name_in_doc for part in query_parts):
+            meta = doc.get("metadata", {})
+            full_name_in_doc = meta.get("full_name", "").lower()
+
+            # Create a set of all individual name words from the document for robust matching.
+            # This handles formats like "Carpenter, Michael" and "Jared Escobar" equally well.
+            doc_name_parts = set(full_name_in_doc.replace(",", "").split())
+
+            # If all parts of the user's search query are found within the document's name parts, consider it a match.
+            # This will correctly match a search for "escobar" to the document for "Jared Escobar".
+            if query_parts.issubset(doc_name_parts):
                 matching_docs.append(doc)
         
         # Determine the best primary name from the actual matches
         final_primary_name = primary_name
         if matching_docs:
             final_primary_name = max([doc.get("metadata", {}).get("full_name", "") for doc in matching_docs], key=len)
+            self.current_query_entities.append(final_primary_name) # <-- ADD THIS LINE
 
         self.debug(f"Entity resolved: Primary='{final_primary_name}', Aliases={list(resolved_aliases)}, Found {len(matching_docs)} docs.")
         
@@ -2181,7 +1897,7 @@ class AIAnalyst:
     
     def search_database(self, query_text: Optional[str] = None, query: Optional[str] = None,
                     filters: Optional[dict] = None, document_filter: Optional[dict] = None,
-                    collection_filter: Optional[str] = None, n_results: int = 50) -> List[dict]: # Add n_results=50 here
+                    collection_filter: Optional[str] = None, n_results: int = 200) -> List[dict]: # Add n_results=50 here
         """
         The core database search function. It can handle semantic queries, metadata filters,
         and document content filters, with robust normalization for filter values.
@@ -2421,29 +2137,52 @@ class AIAnalyst:
         
         return sorted_results
         
-    def execute_reasoning_plan(self, query: str, history: Optional[List[dict]] = None) -> tuple[str, Optional[dict]]:
+    def execute_reasoning_plan(self, query: str, session: dict) -> tuple[str, Optional[dict], List[dict]]:
         """
-        The main orchestration method that processes a user query from start to finish.
-        1. Gets a tool-use plan from the Planner LLM (with retries).
-        2. Executes the selected tool.
-        3. If the tool fails, performs a fallback semantic search.
-        4. Gathers all retrieved documents into a context.
-        5. Uses the Synthesizer LLM to generate a final, conversational answer.
+        [MODIFIED FOR SESSIONS & SUMMARY] The main orchestration method.
         """
         self.debug("Starting reasoning plan execution...")
         start_time = time.time()
+
+        self.current_query_entities = []
+
+
+        # --- NEW BLOCK 1: Reset and perform pronoun resolution ---
+        self.current_query_entities = [] # Reset for this query
         
+        pronouns = {'his', 'her', 'their', 'him', 'he', 'she'}
+        query_words = set(query.lower().split())
+        
+        if not pronouns.isdisjoint(query_words):
+            mentioned_entities = session.get("mentioned_entities", [])
+            if mentioned_entities:
+                last_entity = mentioned_entities[-1]
+                self.debug(f"Pronoun detected. Replacing with last known entity: '{last_entity}'")
+                
+                # Simple replacement logic
+                for pronoun in pronouns:
+                    # Handle possessives like "his" -> "Michael Carpenter's"
+                    if pronoun.endswith('s'):
+                         query = re.sub(r'\b' + pronoun + r'\b', f"{last_entity}'s", query, flags=re.IGNORECASE)
+                    else:
+                         query = re.sub(r'\b' + pronoun + r'\b', last_entity, query, flags=re.IGNORECASE)
+                self.debug(f"Modified query: '{query}'")
+        # --- END NEW BLOCK 1 ---
+        # --- NEW: Extract context from the full session object ---
+        chat_history = session.get("chat_history", [])
+        summary = session.get("conversation_summary", "No summary yet.")
+        # --- END NEW ---
+
         plan_json = None
         final_context = {}
         error_msg = None
         results_count = 0
         
-        # Variables for detailed training data
         outcome = "FAIL_UNKNOWN"
         execution_mode = "primary"
+        collected_docs = []
         
         try:
-            # 1. Attempt to get a valid plan from the planner with retries
             max_retries = 5
             tool_call_json = None
             
@@ -2451,46 +2190,59 @@ class AIAnalyst:
                 self.debug(f"Planner Attempt {attempt + 1}/{max_retries}...")
             
                 sys_prompt = PROMPT_TEMPLATES["planner_agent"].format(
-                    schema=self.db_schema_summary,
                     all_programs_list=self.all_programs,
                     all_departments_list=self.all_departments,
                     all_positions_list=self.all_positions,
                     all_doc_types_list=self.all_doc_types,
                     all_statuses_list=self.all_statuses,
-                    
                     dynamic_examples=self.dynamic_examples
                 )
-                processed_query = query
-                # Add context about the last referenced person if a pronoun is used
-                if self.last_referenced_person and re.search(r'\b(his|her|their|they|he|she)\b', query, re.I):
-                    processed_query = f"{query} (Note: pronoun likely refers to '{self.last_referenced_person}')"
-
-
+                
+                # --- NEW: Construct a richer user prompt with the summary ---
+                planner_user_prompt = (
+                    f"CONVERSATION SUMMARY (What we are currently talking about):\n{summary}\n\n"
+                    f"---\n"
+                    f"USER'S CURRENT QUERY (Your task):\n{query}"
+                )
+                # --- END NEW ---
 
                 plan_raw = self.planner_llm.execute(
                     system_prompt=sys_prompt,
-                    user_prompt=f"User Query: {processed_query}",
+                    user_prompt=planner_user_prompt, # Use the new prompt
                     json_mode=True, phase="planner",
-                    history=history
+                    history=chat_history # Still pass short-term history
                 )
         
-                # Validate the generated plan
                 tool_call_json = self._repair_json(plan_raw)
                 if tool_call_json and "tool_name" in tool_call_json:
                     self.debug(f"Valid tool selected on attempt {attempt + 1}.")
-                    plan_json = {"plan": [{"step": 1, "thought": f"AI selected the best tool on attempt {attempt + 1}.", "tool_call": tool_call_json}]}
-                    break # Success, exit the loop
+                    plan_json = {"plan": [{"tool_call": tool_call_json}]}
+                    break
                 else:
                     self.debug(f"Attempt {attempt + 1} failed to select a valid tool. Retrying...")
                     time.sleep(1)
             
             if not tool_call_json:
-                outcome = "FAIL_PLANNER" # Set outcome before raising error
+                outcome = "FAIL_PLANNER"
                 raise ValueError(f"AI failed to select a valid tool after {max_retries} attempts.")
 
             # 2. Execute the validated tool call
             tool_name = tool_call_json["tool_name"]
             params = tool_call_json.get("parameters", {})
+
+            # --- NEW: DEDICATED PATH FOR CONVERSATIONAL QUERIES ---
+            if tool_name == "answer_conversational_query":
+                self.debug("-> Handling conversational query with a dedicated synth call.")
+                final_answer = self.synth_llm.execute(
+                    system_prompt="You are a friendly and helpful AI assistant for PDM. Respond naturally and conversationally to the user.",
+                    user_prompt=query,
+                    history=chat_history or [],
+                    phase="synth"
+                )
+                execution_time = time.time() - start_time
+                self.training_system.record_query_result(query=query, plan=plan_json, outcome="SUCCESS_CONVERSATIONAL", execution_time=execution_time, final_answer=final_answer, results_count=0)
+                return final_answer, plan_json, []
+            # --- END OF NEW PATH ---
             
             collected_docs = []
             
@@ -2637,11 +2389,10 @@ class AIAnalyst:
         self.debug("Synthesizing final answer...")
         context_for_llm = json.dumps(final_context, indent=2, ensure_ascii=False)
         synth_prompt = PROMPT_TEMPLATES["final_synthesizer"].format(context=context_for_llm, query=query)
-        
         final_answer = self.synth_llm.execute(
             system_prompt="You are a careful AI analyst who provides conversational answers based only on the provided facts.",
             user_prompt=synth_prompt, 
-            history=history or [], 
+            history=chat_history or [],
             phase="synth"
         )
 
@@ -2661,43 +2412,100 @@ class AIAnalyst:
             final_answer=final_answer,
             corruption_details=corruption_details
         )
+
+        # --- NEW BLOCK 2: Save newly found entities to the session ---
+        if self.current_query_entities:
+            for entity_name in self.current_query_entities:
+                self._add_entity_to_session(session['session_id'], entity_name)
+        # --- END NEW BLOCK 2 ---
+
+
         
-        return final_answer, plan_json
+        return final_answer, plan_json, collected_docs
     
     # -------------------------------
 # Function use for Web
 # -------------------------------
-    def web_start_ai_analyst(self, user_query: str):
-            
+    def web_start_ai_analyst(self, user_query: str, session_id: str):
+        """
+        [CORRECTED VERSION] Executes the AI plan for a specific user session.
+        """
         user_query = user_query.strip()
-        # --- ✨ CHANGE START ---
-        # Load persistent chat history from file
-        chat_history: List[dict] = []
-        try:
-            with open(self.history_file, "r", encoding="utf-8") as f:
-                chat_history = json.load(f)
-                print(f"✅ Loaded {len(chat_history) // 2} turns from previous session.")
-        except (FileNotFoundError, json.JSONDecodeError):
-            print("📜 No previous session history found. Starting fresh.")
-        # --- ✨ CHANGE END ---
 
-        final_answer, plan_json = self.execute_reasoning_plan(user_query, history=chat_history)
+        # 1. Get the specific session for this user (removes all old file logic)
+        session = self._get_or_create_session(session_id)
+
+        # 2. Execute the AI plan, passing the full session object
+        final_answer, plan_json, collected_docs = self.execute_reasoning_plan(user_query, session=session)
+
+        # 3. Update this session's history with the new exchange
+        self._update_session_history(session_id, user_query, final_answer)
+
+        # 4. Trigger the conversation summarizer
+        self._summarize_conversation(session_id)
+
+        # 5. Perform data reconciliation for the UI (this logic remains the same)
+        synced_structured_data = []
+        if collected_docs and "system_summary" not in collected_docs[0].get("source_collection", ""):
+            # ... (your existing reconciliation logic is correct and does not need to change)
+            for doc in collected_docs:
+                student_name = doc.get("metadata", {}).get("full_name")
+                if student_name:
+                    name_parts = [part.strip() for part in student_name.replace(",", "").lower().split()]
+                    if all(part in final_answer.lower() for part in name_parts):
+                        meta = doc.get("metadata", {})
+                        synced_structured_data.append({
+                            "full_name": meta.get("full_name"),
+                            "student_id": meta.get("student_id"),
+                            "program": meta.get("course") or meta.get("program"),
+                            "year": meta.get("year") or meta.get("year_level"),
+                            "section": meta.get("section"),
+                            "image_url": meta.get("image_url"),
+                            "raw": doc
+                        })
+
+        if not synced_structured_data:
+            synced_structured_data = collected_docs
+
+        # 6. Assemble and return the final response
+        final_response = {
+            "ai_response": final_answer,
+            "structured_data": synced_structured_data
+        }
+
+        return final_response
         
-        # Update the history
-        chat_history.append({"role": "user", "content": user_query})
-        chat_history.append({"role": "assistant", "content": final_answer})
 
-        # --- ✨ CHANGE START ---
-        # Trim the history using the configurable limit
-        history_limit = self.max_history_turns * 2 
-        if len(chat_history) > history_limit:
-            self.debug(f"📜 History limit reached. Trimming to last {self.max_history_turns} turns.")
-            chat_history = chat_history[-history_limit:]
+    def _create_image_map(self, structured_data: list[dict]) -> dict:
+        """
+        Processes the AI's structured_data to create a JSON map of image URLs.
+        """
+        by_id = {}
+        by_name_temp = defaultdict(list)
 
-        
-        print(f"AI: {final_answer}")
-        return final_answer
-        # --- ✨ CHANGE END ---
+        for student_doc in structured_data:
+            meta = student_doc.get("metadata", {})
+            image_url = meta.get("image_url")
+            student_id = meta.get("student_id")
+            full_name = meta.get("full_name")
+
+            if not image_url or not student_id or not full_name:
+                continue
+
+            by_id[student_id] = image_url
+
+            name_parts = [part.strip() for part in full_name.replace(",", "").lower().split()]
+            normalized_full_name = " ".join(reversed(name_parts))
+            last_name = name_parts[0]
+
+            by_name_temp[normalized_full_name].append(image_url)
+            by_name_temp[last_name].append(image_url)
+
+        by_name_final = {}
+        for name, urls in by_name_temp.items():
+            by_name_final[name] = urls[0] if len(urls) == 1 else list(set(urls))
+
+        return {"by_id": by_id, "by_name": by_name_final}
 
 # -------------------------------
 # Function use for terminal
@@ -2705,131 +2513,54 @@ class AIAnalyst:
 
     def start_ai_analyst(self):
         """
-        Starts the main interactive command-line loop for the AI Analyst.
+        [CORRECTED VERSION] Starts an interactive loop with full session management.
         """
         print("\n" + "="*70)
-        print("AI SCHOOL ANALYST (Retrieve -> Analyze)")
-        print("   Type 'exit' to quit or 'train' to save the last plan.")
+        print("AI SCHOOL ANALYST (In-Memory Session with Summarization)")
+        print("   Type 'exit' to quit. Memory will be cleared on exit.")
         print("="*70)
+
+        terminal_session_id = "terminal_user_01"
+        session = self._get_or_create_session(terminal_session_id)
 
         last_query = None
         last_plan_for_training = None
-    
-        # Load persistent chat history from file
-        chat_history: List[dict] = []
-        try:
-            with open(self.history_file, "r", encoding="utf-8") as f:
-                chat_history = json.load(f)
-                print(f"Loaded {len(chat_history) // 2} turns from previous session.")
-        except (FileNotFoundError, json.JSONDecodeError):
-            print("No previous session history found. Starting fresh.")
 
         while True:
             q = input("\nYou: ").strip()
             if not q: continue
-            
+
             if q.lower() == "exit":
-                # Save chat history to file on exit
-                try:
-                    with open(self.history_file, "w", encoding="utf-8") as f:
-                        json.dump(chat_history, f, indent=2, ensure_ascii=False)
-                        print(f"Chat history saved to {self.history_file}.")
-                except Exception as e:
-                    print(f"Could not save chat history: {e}")
+                print("Exiting. Session memory will be cleared.")
                 break
-            
+
             if q.lower() == "train":
-                if last_query and last_plan_for_training:
-                    self._save_dynamic_example(last_query, last_plan_for_training)
-                    self.dynamic_examples = self._load_dynamic_examples()
-                    print("Plan saved as a new training example.")
-                else:
-                    print("No plan to save. Please run a query first.")
+                # ... (this part is fine)
                 continue
 
-            final_answer, plan_json = self.execute_reasoning_plan(q, history=chat_history)
-            
+            # --- FIX 1: Pass the entire 'session' object, not just its history ---
+            final_answer, plan_json, collected_docs = self.execute_reasoning_plan(q, session=session)
+
+            # Update the session history in memory and MongoDB
+            self._update_session_history(terminal_session_id, q, final_answer)
+
+            # --- FIX 2: Add the call to the summarizer ---
+            self._summarize_conversation(terminal_session_id)
+
             print("\nAnalyst:", final_answer)
-            
+
+            # The rest of your file-saving logic is correct.
+            image_map = self._create_image_map(collected_docs)
+            output_for_file = {
+                "ai_response": final_answer,
+                "structured_data": collected_docs,
+                "image_map": image_map
+            }
+            output_filename = "latest_response_data.json"
+            with open(output_filename, "w", encoding="utf-8") as f:
+                json.dump(output_for_file, f, indent=2, default=str)
+            print(f"✅ Detailed data and image map saved to '{output_filename}'")
+
             if plan_json and "plan" in plan_json:
                 last_query = q
                 last_plan_for_training = plan_json
-
-            # Update and trim the chat history
-            chat_history.append({"role": "user", "content": q})
-            chat_history.append({"role": "assistant", "content": final_answer})
-
-            history_limit = self.max_history_turns * 2 
-            if history_limit == 0:
-                self.debug("History is disabled. Clearing chat history for next turn.")
-                chat_history.clear() # Explicitly clear the list
-            elif len(chat_history) > history_limit:
-                self.debug(f"History limit reached. Trimming to last {self.max_history_turns} turns.")
-                chat_history = chat_history[-history_limit:]
-
-# -------------------------------
-# Helper to load config.json
-# -------------------------------
-def load_llm_config(mode: str, config_path: str = "config.json") -> dict:
-    """
-    Loads LLM configuration from a JSON file with detailed diagnostics to help
-    diagnose file path or content issues.
-    """
-    default_config = {
-        "api_mode": mode, "debug_mode": True, "mistral_api_key": "YOUR_MISTRAL_API_KEY",
-        "mistral_api_url": "https://api.mistral.ai/v1/chat/completions",
-        "ollama_api_url": "http://localhost:11434/api/chat",
-        "planner_model": None, "synth_model": None
-    }
-
-    print("\n--- CONFIG LOADER DIAGNOSTICS ---")
-    print(f"[1] Function received request for mode: '{mode}'")
-    print(f"[2] Using config file path: '{config_path}'")
-
-    if not os.path.exists(config_path):
-        print(f"[3] FATAL: File does NOT exist at the path above.")
-        print(f"    Please verify the file is in the correct directory and the name is spelled correctly.")
-        print("--- END DIAGNOSTICS ---\n")
-        print(f"Could not find '{config_path}'. Using default settings.")
-        return default_config
-
-    print(f"[3] SUCCESS: File found at the specified path.")
-
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            raw_content = f.read()
-            print("[4] Raw content of the file being read:")
-            print("<<<<<<<<<<<<<<<<<<<<")
-            print(repr(raw_content))
-            print(">>>>>>>>>>>>>>>>>>>>")
-
-            if not raw_content.strip():
-                print("[5] FATAL: The config file is empty.")
-                print("--- END DIAGNOSTICS ---\n")
-                print(f"Config file '{config_path}' is empty. Using default settings.")
-                return default_config
-            
-            # Reset file reader cursor before parsing JSON
-            f.seek(0)
-            
-            all_config = json.load(f)
-            print(f"[5] JSON parsed. Top-level keys found are: {list(all_config.keys())}")
-
-        if mode in all_config:
-            print(f"[6] SUCCESS: Mode '{mode}' was found in the keys.")
-            cfg = all_config[mode]
-            cfg["api_mode"] = mode
-            print("--- END DIAGNOSTICS ---\n")
-            print(f"Loaded {mode.upper()} configuration from {config_path}")
-            return cfg
-        else:
-            print(f"[6] FAILURE: Mode '{mode}' was NOT found in the keys {list(all_config.keys())}.")
-            print("--- END DIAGNOSTICS ---\n")
-            print(f"Mode '{mode}' not found in {config_path}, using defaults.")
-            return default_config
-
-    except Exception as e:
-        print(f"[!] An unexpected error occurred during file processing: {e}")
-        print("--- END DIAGNOSTICS ---\n")
-        print(f"An error occurred reading {config_path}. Using default settings.")
-        return default_config
