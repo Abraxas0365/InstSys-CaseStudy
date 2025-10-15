@@ -1,45 +1,44 @@
-const mongoose = require('mongoose')
-const url_1 = "mongodb://localhost:27017/accounts"
-const url_2 = "mongodb://localhost:27017/file"
+const mongoose = require('mongoose');
+const crypto = require('crypto');
+const url_1 = "mongodb://localhost:27017/accounts";
+const url_2 = "mongodb://localhost:27017/file";
 
 const userSchema = new mongoose.Schema({
-  student_name: { type: String, required: true},
-  year: { type: String, required: true},
-  course: { type: String, required: true},
-  email: { type: String, required: true},
-  password: { type: String, required: true},
-  role: { type: String, required: true},
+  _id: { type: String, required: true },
+  student_name: { type: String, required: true },
+  year: { type: String, required: true },
+  course: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, required: true },
 })
 const fileSchema = new mongoose.Schema({
-
-  file_name: {type: String, require:true},
-  fileType: {type: String, required:true},
-  file: {type: Buffer, required:true}
-
+  file_name: { type: String, require: true },
+  fileType: { type: String, required: true },
+  file: { type: Buffer, required: true },
+  fileHash: { type: String, required: true, unique: true },
 })
 
-const User = mongoose.model('User', userSchema);
-const File = mongoose.model('File', fileSchema);
-
-
 const AccountsConnection = mongoose.createConnection(url_1, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-const FileConnection = mongoose.createConnection(url_1, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+const FileConnection = mongoose.createConnection(url_2, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
 
+const User = AccountsConnection.model('User', userSchema);
+const File = FileConnection.model('File', fileSchema);
 
 async function connection() {
 
   try {
 
-      await Promise.all([
-        AccountsConnection.asPromise(),
-        FileConnection.asPromise(),
-      ]);
+    await Promise.all([
+      AccountsConnection.asPromise(),
+      FileConnection.asPromise(),
+    ]);
 
     console.log("Connection established.");
 
@@ -54,24 +53,49 @@ async function register(userData) {
 
     const user = new User(userData);
     const savedUser = await user.save();
-    console.log("User registered.")
+    console.log("User registered.");
+
     return savedUser;
 
   } catch (error) {
-    console.error("Error registering user:", error.message)
+
+    if (error.code === 11000) {
+
+      console.error(`Registration Error.`);
+      return { status: 409, message: "There was an error with your registration" };
+
+    }
+
+    console.error("Error registering user:", error.message);
+    return { status: 500, message: "Internal Server Error" };
   }
 }
 
 async function upload(userFile) {
   try {
-    
-    const file = new File(userFile);
+
+    const fileHash = crypto.createHash('sha256').update(userFile.file).digest('hex');
+    const existingfile = await File.findOne({ fileHash });
+
+    if (existingfile) {
+      console.error(" Duplicate file content ");
+      return { status: 409, message: "Duplicate file content" };
+    }
+
+    const file = new File({ ...userFile, fileHash });
     const saveFile = await file.save();
-    console.log("File uploaded")
-    return savedFile;
+    console.log("File uploaded successfully.");
+
+    return saveFile;
 
   } catch (error) {
-    console.error("")
+
+    if (error.code === 11000) {
+
+      console.error('Duplicate file')
+    }
+
+    console.error("Error uploading file:", error.message);
   }
 
 }

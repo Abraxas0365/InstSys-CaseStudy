@@ -2,7 +2,7 @@ import uvicorn #type: ignore
 from fastapi.middleware.cors import CORSMiddleware #type: ignore
 from fastapi import FastAPI, Request, HTTPException#type: ignore
 from fastapi.responses import JSONResponse #type: ignore
-from src.LLM_model import AIAnalyst
+from utils.ai_core import AIAnalyst
 from src.config import Configuration
 
 app = FastAPI()
@@ -28,7 +28,7 @@ async def shutdown_event():
 
 ai_analyst = None
 
-@app.post("/ai_config")
+@app.post("/v1/chat/prompt/ai_config")
 async def AI_config(request: Request):
     global ai_analyst
     data = await request.json()
@@ -37,7 +37,7 @@ async def AI_config(request: Request):
     ai_analyst = AIAnalyst(collections=collections, llm_config=config, execution_mode=config.execution_mode)
     return JSONResponse({"status": "AI Analyst configured successfully"}, status_code=200)
 
-@app.post("/chatprompt")
+@app.post("/v1/chat/prompt/response")
 async def ChatPrompt(request: Request):
     global ai_analyst
     if ai_analyst is None:

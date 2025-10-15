@@ -7,7 +7,7 @@ async function callPythonAPI(usr_query) {
       return res.status(400).json({ error: 'Missing query' });
     }
 
-    const reponse = await axios.post('http://localhost:5000/chatprompt', {
+    const reponse = await axios.post('http://localhost:5000/v1/chat/prompt/response', {
       query: usr_query,
     });
     
@@ -26,7 +26,7 @@ async function configPythonAPI(collection) {
       return res.status(400).json({ error: 'Missing collection in request body'})
     }
 
-    const response = await axios.post('http//localhost:5000/ai_config', {
+    const response = await axios.post('http//localhost:5000/v1/chat/prompt/ai_config', {
       collections: collection,
     });
 
