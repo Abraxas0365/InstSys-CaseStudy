@@ -10,7 +10,7 @@
     "test": "node utils/main.js",
     "system": "node utils/run_system.js",
     "process-excel": "node utils/process_my_excel.js",
-    "start:server": "node server.js"
+    "start:server": "nodemon server.js"
   },
   "keywords": [
     "student",
@@ -22,6 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.12.2",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "mongodb": "^6.3.0",

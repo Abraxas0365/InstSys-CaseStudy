@@ -1,24 +1,57 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
-import { decryptData, loadStudents } from "../utils/helpers.js"; // adjust paths
+import { decryptData, loadStudents } from "../utils/RBAC.js"; // adjust paths
+import { fileURLToPath } from "url";
 
 const router = express.Router();
+console.log("🔹 Guest route initialized");
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ACCOUNTS_DIR = path.join(__dirname, "../src/accounts");
 
 // 🔹 GET /student/:student_id
-router.get("/student/:student_id", async (req, res) => {
+router.get("/:student_id", async (req, res) => {
   try {
     const studentId = req.params.student_id;
-    const students = loadStudents();
+    console.log("✅ Guest route hit with ID:", studentId);
 
-    const student = students[studentId];
-    if (!student) {
-      return res.status(404).json({ error: "Student not found" });
+    let students = loadStudents();
+    console.log("All students loaded:", students);
+
+    // Support both array and object shapes
+    let student;
+    if (Array.isArray(students)) {
+      student = students.find(
+        (s) => s.studentId === studentId || s.id === studentId || s?.student_id === studentId
+      );
+    } else if (students && typeof students === "object") {
+      // try keyed lookup first, then fallback to find by nested id fields
+      student = students[studentId] ?? Object.values(students).find(
+        (s) => s?.studentId === studentId || s?.id === studentId || s?.student_id === studentId
+      );
     }
 
-    // Decrypt and split name
-    const decryptedName = decryptData(student.studentName || "");
-    const nameParts = decryptedName.split(" ");
+    // If still not found and the request is for the guest id, try guest.json
+    if (!student && studentId === "PDM-0000-000000") {
+      const guestFile = path.join(ACCOUNTS_DIR, "guest.json");
+      if (fs.existsSync(guestFile)) {
+        const guestData = JSON.parse(fs.readFileSync(guestFile, "utf-8"));
+        student = guestData[studentId] ?? Object.values(guestData)[0];
+      }
+    }
+
+    
+    else if (!student) {
+      console.log("❌ Student not found:", studentId);
+      return res.status(404).json({ error: "Student not found" });
+    }
+    console.log("Decrypted student data (raw):", student);
+
+    // Decrypt and split name (guarding against undefined fields)
+    const decryptedName = decryptData(student.studentName || student.name || "");
+    const nameParts = (decryptedName || "").split(" ").filter(Boolean);
 
     let firstName = "", middleName = "", lastName = "";
     if (nameParts.length >= 3) {
@@ -44,8 +77,10 @@ router.get("/student/:student_id", async (req, res) => {
     };
 
     res.status(200).json(decryptedStudent);
+    console.log("✅ Decrypted student data sent:", decryptedStudent);
   } catch (err) {
     res.status(500).json({ error: err.message });
+    console.error("❌ Error in guest route:", err);
   }
 });
 

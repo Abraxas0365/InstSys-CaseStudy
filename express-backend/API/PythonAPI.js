@@ -1,46 +1,35 @@
-const axios = require('axios');
+import axios from "axios";
 
-async function callPythonAPI(usr_query) {
+export async function callPythonAPI(userQuery) {
   try {
-
-    if (!usr_query) {
-      return res.status(400).json({ error: 'Missing query' });
+    if (!userQuery) {
+      throw new Error("Missing query");
     }
 
-    const reponse = await axios.post('http://localhost:5000/v1/chat/prompt/response', {
-      query: usr_query,
+    const response = await axios.post("http://localhost:5000/v1/chat/prompt/response", {
+      query: userQuery,
     });
-    
-    return response.data;
 
+    return response.data;
   } catch (error) {
-    console.error('Error calling Python API', error.message);
-    res.status(500).send('Error calling Python API');
+    console.error("Error calling Python API:", error.message);
+    throw error;
   }
 }
 
-async function configPythonAPI(collection) {
+export async function configPythonAPI(collection) {
   try {
-
     if (!collection) {
-      return res.status(400).json({ error: 'Missing collection in request body'})
+      throw new Error("Missing collection in request body");
     }
 
-    const response = await axios.post('http//localhost:5000/v1/chat/prompt/ai_config', {
+    const response = await axios.post("http://localhost:5000/v1/chat/prompt/ai_config", {
       collections: collection,
     });
 
-    return response.data
-
+    return response.data;
   } catch (error) {
-    console.error('Error sending collection:', error.message);
-    res.status(500).send('Error sending Collection');
+    console.error("Error sending collection:", error.message);
+    throw error;
   }
 }
-
-module.export = {
-  callPythonAPI,
-  configPythonAPI,
-};
-
-
