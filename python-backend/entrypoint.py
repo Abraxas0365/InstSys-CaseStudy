@@ -55,4 +55,4 @@ async def ChatPrompt(request: Request):
 
 if __name__ == "__main__":
     
-    uvicorn.run("entrypoint:app", port=5000, reload=True)
+    uvicorn.run("entrypoint:app", port=5001, reload=True)
