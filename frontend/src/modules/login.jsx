@@ -87,10 +87,16 @@ function Login({ goRegister, goDashboard }) {
   const handleGuestLogin = async () => {
     const guestId = "PDM-0000-000000";
     try {
+      // goDashboard();
       // Fetch guest.json to get the role
       const guestRes = await fetch("http://127.0.0.1:5000/student/" + guestId);
+      // if (!guestRes.ok) {
+      //   showPopup("error", "Guest account not found");
+      //   return;
+      // }
       const guestData = await guestRes.json();
       const guestRole = guestData.role || "Guest";
+      console.log("guest result: ",guestData);
 
       const res = await fetch("http://127.0.0.1:5000/login", {
         method: "POST",

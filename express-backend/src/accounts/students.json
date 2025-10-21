@@ -1,42 +1,22 @@
 {
-    "PDM-2023-003210": {
-        "studentName": "gAAAAABoxaW9n8ZD0a3dg9NvbkqMHebwLa4NJ4qRL8O6BSrYCgPw9GFe6EaMdpKYJxKymu85iHIVvT0YGAoupFD9CNzJ-78YWkibJT_7hhO48D8ix3SC73w=",
-        "year": "gAAAAABoxaW9wqcfAmbL-2jNpYeWY2peIY1JkrE2-JCVPgLdB5HDPOmG79Lq7RoWDB8ZE1HJcd1lhfN6r8uV3XcQfZssNK4jPg==",
-        "course": "gAAAAABoxaW94HLeR0H_AHXDiWcUmFw-aqqizIK1ZgpAUamxMUoBhnDhEqG4BtQ22zoLstTkOHcgAIjqayxd86O1ha_hC7Siea_GeAbY_BjJlSRHAFLtpQsqR1l8mkRj2Y_oJayzK7CH",
-        "email": "gAAAAABoxaW9QaTOl4NA8FvvdqealYCPZF8_FosDCD2-74FtqJ4L90zI5Ktb4b9HFIhqnMlBBXz2MSz1BAFxX2V8JanDfB2Qz7Rwbv7_dOwDV_ExmjITiPN96JNR2eug-CsMKkRdVOfJ",
-        "password": "scrypt:32768:8:1$aJOq76me9lQKMCuf$70871eda9c0ca592631f209130c192ccd486889d4d086886db6eeafe7a3130920997041e0cd7da4ddd4ab204e29c9dbcc8eb4914546bff979a5677cb41358540",
-        "role": "student CS"
-    },
-    "PDM-0001-000000": {
-        "studentName": "gAAAAABoxnuScUAO6UyA0kiPsNssD02f1Onp0PlxI_OA8vdeRWqnhUs6LsTTQVzW3eppV2zAGXSWP8DE0STmgM59m41bp0p_8ksCY5S5NM9wZgWynT-dsjqBwzDtoCGxMVQtc-Ztq6Zz",
-        "year": "gAAAAABoxnuSY9Oi75vuBz8-zdFeDHNGEEZ23t6t_j0F9qWg1HVRcz9iGdM3JgnYYT7MHps7nRH3KXILeFid9ZB5thHuMoC11w==",
-        "course": "gAAAAABoxnuSEE1fnhcgFxOr-rQFtodE7-dyHh5B1GUgwZz7_54mJbhSBw-nhpXQNPqHNasyCBxLDIFgpZzxhso1Rwig-vPLgm8qH6u9RdQorhrpZSDb1LWGP60llhs-WZrFQL1OhKib",
-        "email": "gAAAAABoxnuS3__R0SBqDqJupssZVJ6xbQJP3TVtVXelaUji1ukEk-tQeiNn1fDqbtkoRCAwATnyPZKX-sGF7G78NF8-1Q0aq9YKJUp98iDh1O9J0uyYbkE=",
-        "password": "scrypt:32768:8:1$Qf4rSA4ZgTWDrS4g$e80b0c7d2f80320b2369faaf3ec0637c8e4ee098c3ae86176e84303bd90aa59500c4e083cb960940770eab7300d4f9e16833ef4f20a10fa525176a7bb0bcc3c9",
-        "role": "admin"
-    },
-    "PDM-2023-000312": {
-        "studentName": "gAAAAABoypiIHLF3ct2Uzt83oayPfpM_o0hi7iOWaXxy4_rWIscgJKpja087kgxew2GEHpH4RllgMmdZdWvZz_BlKli5tz7zQw==",
-        "year": "gAAAAABoypiIux42u5B7Tg6kQtqsn6GEsexJdxh1xTIAiqThUc4WZVkm7RsSgstRe1YUjZaZWFZDD35NXDkAdSC9greH4ohuRw==",
-        "course": "gAAAAABoypiIPOTBbq-VRWlLklTuti_X9KqoAmx0eeOiNL8RXtQq1j_pdIqtRuKzMyMzlmHmzrxVtafCSg0uUCYnUwo4nHKD2w4yk9AexG4KNT8GYpQvhkniMmUC3utExOzEEK3mi5yO",
-        "email": "gAAAAABoypiIbcjLFqBJwZqhG6zG7svzm2syNlUZlXqT6Sjt6uTup2H8wn9VzeZFW_LB2WiNdMyprBXvz7_VUJCnQDUSSylyCNrnwyOcxB_dNxnMD9wCCII=",
-        "password": "scrypt:32768:8:1$aZpsUSpEy9gMrpKm$e73b2f3ceab74a5292c48c6e599b456f89719621351a534ec256b4ff6c5f5b860d8507c433da28e0b321dada6044d28e667377d33a0426e2c319cfe58cd34183",
-        "role": "admin"
-    },
-    "PDM-2023-003312": {
-        "studentName": "gAAAAABozppPuKBImZ6GbTpX_bpLr8mNlQy3oIG4Xuze5vrS-fuVypWhPbT7aqgNhdsKZzCMK2HkevbesFYflFHsJERhKm_bttu7lM9lsTS9VRnNlK_1luc=",
-        "year": "gAAAAABozppPCalluCXkKXER1SX17W664nwRGTFGhWZVMlS7G6klemmyWi16RGCfst7D5la0LCMa5xXvazBSc1JtdHpKRqfm6Q==",
-        "course": "gAAAAABozppP1bAKIbbHO7y6V28QFZfe609G5TCcwUn1N2hS4i-1cJwUp0iTEVcU8t_oFGXrhizlTkLKXOcneTzjJRSlApmZ0bEwPlJhaeN8PT9MfSIS2XDRIvorAzbw2VWs7ArUqyHR",
-        "email": "gAAAAABozppPR-4WZuqanSTqR9QuJxjjCWZiCYGm77Z6sWwEyD-_5LRcNZD7ilgqVML18H6CJzxyDsvUBuvneKy4s4BiUnCn8yiJPtP2JuEbBUI03CzGkW4=",
-        "password": "scrypt:32768:8:1$N4WASszGTfiUrB3K$b75f291f88920bc001f6c00046b585ddb1011da9138754c2194c3450a3873329d3b1685fc223d050bbf8c7e1d51bdb64798f59332cd7f6ea2b55d4c345958b13",
-        "role": "student CS"
-    },
-    "PDM-2023-003915": {
-        "studentName": "gAAAAABo2OpfKx7ZjXhldIDa8BpXVinfQQN-SDcifz5vE6lsJw71MYaeNudf230lC8_vVy9j8p_hnwDWwIp73agMnUIdsw4ToABoUYJTLUqy4-13wh4sfDY=",
-        "year": "gAAAAABo2OpfVOBE8Ars_mfAm-Y1HlE-HXnkg9UljzDvayG5biPyWox0ZvL5F9f-rBV4KgEVixW6MNjOAvpLfe6_TDamlD6Euw==",
-        "course": "gAAAAABo2OpfB72StZOuDHUppXsdRh7maLCsu18iYrI8MXK0LAaYqSbNT0QcKfKDT8WdkEfBgTESOP6RnhcgkX8PF_w-IRRc_KyhwM6LtDAlh0vAWHIQmJD2NA0YhQoBqi1k6MknLRyG",
-        "email": "gAAAAABo2Opf3vvERsJLSgOMvpLSqqUwchU19Z1KppMLze-RZsq1PfQKpdE7gocrP5idXYThkDUG3HBtdfFaLKv14pUKiTTfkSDFtRbmUyv_vsuj4plaocI=",
-        "password": "scrypt:32768:8:1$uNbYsIQc7gf5jCPx$667d9e20cc5554675c2150b97115c1e5536a8df3f788b955f704670b6a7cbad3f085f7c23b000c12ddf3c3ddb0d6585b953bc6fcde945806f56c8a6856539674",
-        "role": "admin"
-    }
+  "PDM-2023-003183": {
+    "studentName": "Jhervin Mungcal",
+    "year": "3",
+    "course": "",
+    "email": "email@email.com",
+    "password": "123",
+    "role": "student CS"
+  },
+  "[object Object]": {
+    "studentName": "undefined undefined undefined",
+    "role": "student"
+  },
+  "PDM-2025-123456": {
+    "studentName": "Jhenver Agustin Mungcal",
+    "year": "First Year",
+    "course": "Bachelor of Science in Information Technology (BSIT)",
+    "email": "a@g.com",
+    "password": "Qwer123!",
+    "role": "student IT"
+  }
 }

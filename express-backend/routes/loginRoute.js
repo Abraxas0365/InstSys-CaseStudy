@@ -1,26 +1,26 @@
+// routes/loginRoute.js
 import express from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-
-// Utilities (uncomment + fix path once you have them)
-// import { loadStudents, decryptData, verifyPassword, mapStudentRole } from "../utils/helpers.js";
+import { loadStudents, verifyPassword, mapStudentRole } from "../utils/RBAC.js";
 
 const router = express.Router();
-
-// Recreate __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const __outdirname = path.dirname(__dirname);
 
-const ROLE_ASSIGN_FILE = path.join(__dirname, "../backend/last_role_assign.json");
+const ROLE_ASSIGN_FILE = path.join(__outdirname, "../express-backend/src/accounts/last_role_assign.json");
 
-// POST /login
-router.post("/login", (req, res) => {
+console.log("🔹 Login route initialized");
+
+// 🔹 POST /login
+router.post("/login", async (req, res) => {
   const { studentId, email, password } = req.body;
 
   // Guest login special case
   if (studentId === "PDM-0000-000000") {
-    const guestFile = path.join(__dirname, "../backend/accounts/guest.json");
+    const guestFile = path.join(__outdirname, "../express-backend/src/accounts/guest.json");
 
     try {
       const guestData = JSON.parse(fs.readFileSync(guestFile, "utf-8"));
@@ -30,7 +30,6 @@ router.post("/login", (req, res) => {
         return res.status(404).json({ error: "Guest account not found" });
       }
 
-      // Save role and assign
       fs.writeFileSync(
         ROLE_ASSIGN_FILE,
         JSON.stringify({ role: "Guest", assign: ["Guest"] }, null, 2),
@@ -54,18 +53,20 @@ router.post("/login", (req, res) => {
   }
 
   // Decrypt and compare email
-  const storedEmail = decryptData(students[studentId].email || "");
+  const storedEmail = students[studentId].email;
+  console.log("Verifying email:", email, "against stored:", storedEmail);
   if (email !== storedEmail) {
     return res.status(401).json({ error: "Email does not match" });
   }
 
   // Verify password
-  if (!verifyPassword(studentId, password)) {
+  const validPassword = verifyPassword(studentId, password);
+  if (!validPassword) {
     return res.status(401).json({ error: "Incorrect password" });
   }
 
   // Determine role
-  const studentRole = students[studentId].role || "student";
+  const studentRole = students[studentId].role;
 
   if (studentRole.toLowerCase() === "admin") {
     fs.writeFileSync(
@@ -91,7 +92,7 @@ router.post("/login", (req, res) => {
     "utf-8"
   );
 
-  res.json({
+  return res.json({
     message: "Login successful",
     studentId,
     role: studentRole,
