@@ -2,7 +2,7 @@ import express from "express";
 import axios from "axios";
 import cors from "cors";
 import loginRoute from "./routes/loginRoute.js";
-import guestRoute from "./routes/guestRoute.js";
+import fetchStudentRoute from "./routes/fetchStudentRoute.js";
 import registerRoute from "./routes/registerRoute.js";
 import refreshCollections from "./routes/refreshCollections.js";
 import { callPythonAPI, configPythonAPI } from "./API/PythonAPI.js";
@@ -29,7 +29,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/", loginRoute);
-app.use("/student", guestRoute);
+app.use("/student", fetchStudentRoute);
 app.use("/", refreshCollections);
 app.use("/", registerRoute);
 

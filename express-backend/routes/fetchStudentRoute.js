@@ -18,7 +18,7 @@ router.get("/:student_id", async (req, res) => {
     console.log("✅ Guest route hit with ID:", studentId);
 
     let students = loadStudents();
-    console.log("All students loaded:", students);
+    // console.log("All students loaded:", students);
 
     // Support both array and object shapes
     let student;
@@ -46,7 +46,7 @@ router.get("/:student_id", async (req, res) => {
       console.log("❌ Student not found:", studentId);
       return res.status(404).json({ error: "Student not found" });
     }
-    console.log("Decrypted student data (raw):", student);
+    // console.log("Decrypted student data (raw):", student);
 
     // Decrypt and split name (guarding against undefined fields)
     const decryptedName = student.studentName;
@@ -76,7 +76,7 @@ router.get("/:student_id", async (req, res) => {
     };
 
     res.status(200).json(decryptedStudent);
-    console.log("✅ Decrypted student data sent:", decryptedStudent);
+    // console.log("✅ Decrypted student data sent:", decryptedStudent);
   } catch (err) {
     res.status(500).json({ error: err.message });
     console.error("❌ Error in guest route:", err);
