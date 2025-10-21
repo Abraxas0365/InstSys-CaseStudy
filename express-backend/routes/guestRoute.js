@@ -1,7 +1,7 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
-import { decryptData, loadStudents } from "../utils/RBAC.js"; // adjust paths
+import { loadStudents } from "../utils/RBAC.js"; // adjust paths
 import { fileURLToPath } from "url";
 
 const router = express.Router();
@@ -9,7 +9,7 @@ console.log("🔹 Guest route initialized");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ACCOUNTS_DIR = path.join(__dirname, "../src/accounts");
+const ACCOUNTS_DIR = path.join(__dirname, "..src/accounts");
 
 // 🔹 GET /student/:student_id
 router.get("/:student_id", async (req, res) => {
@@ -37,11 +37,10 @@ router.get("/:student_id", async (req, res) => {
     if (!student && studentId === "PDM-0000-000000") {
       const guestFile = path.join(ACCOUNTS_DIR, "guest.json");
       if (fs.existsSync(guestFile)) {
-        const guestData = JSON.parse(fs.readFileSync(guestFile, "utf-8"));
+        const guestData = JSON.parse(fs.readFileSync(guestFile));
         student = guestData[studentId] ?? Object.values(guestData)[0];
       }
     }
-
     
     else if (!student) {
       console.log("❌ Student not found:", studentId);
@@ -50,7 +49,7 @@ router.get("/:student_id", async (req, res) => {
     console.log("Decrypted student data (raw):", student);
 
     // Decrypt and split name (guarding against undefined fields)
-    const decryptedName = decryptData(student.studentName || student.name || "");
+    const decryptedName = student.studentName;
     const nameParts = (decryptedName || "").split(" ").filter(Boolean);
 
     let firstName = "", middleName = "", lastName = "";
@@ -70,10 +69,10 @@ router.get("/:student_id", async (req, res) => {
       firstName,
       middleName,
       lastName,
-      email: decryptData(student.email || ""),
-      year: decryptData(student.year || ""),
-      course: decryptData(student.course || ""),
-      role: student.role || "",
+      email: student.email,
+      year: student.year,
+      course: student.course,
+      role: student.role,
     };
 
     res.status(200).json(decryptedStudent);

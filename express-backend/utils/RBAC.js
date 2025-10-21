@@ -1,58 +1,24 @@
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
-import bcrypt from "bcrypt";
 import { fileURLToPath } from "url";
-
-// ======== Setup Encryption ========
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const __outdirname = path.dirname(__dirname);
 
-const KEY_FILE = path.join(__dirname, "fernet.key");
-console.log(KEY_FILE);
-
-// Generate or load encryption key
-function getOrCreateKey() {
-  if (fs.existsSync(KEY_FILE)) {
-    return fs.readFileSync(KEY_FILE);
-  } else {
-    const key = crypto.randomBytes(32);
-    fs.writeFileSync(KEY_FILE, key);
-    return key;
-  }
-}
-
-const secretKey = getOrCreateKey();
-
-// AES-256 encryption/decryption
-export function encryptData(data) {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv("aes-256-cbc", secretKey, iv);
-  let encrypted = cipher.update(data, "utf8", "base64");
-  encrypted += cipher.final("base64");
-  return `${iv.toString("base64")}:${encrypted}`;
-}
-
-export function decryptData(token) {
-  const [ivStr, encrypted] = token.split(":");
-  const iv = Buffer.from(ivStr, "base64");
-  const decipher = crypto.createDecipheriv("aes-256-cbc", secretKey, iv);
-  let decrypted = decipher.update(encrypted, "base64", "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted;
-}
-
 // ======== Database Path ========
 const BASE_DIR = path.join(__outdirname);
-const DB_FILE = path.join(BASE_DIR, "src/accounts/students.json");
+const DB_FILE = path.join(BASE_DIR, "../express-backend/src/accounts/students.json");
 
 // ======== File I/O Helpers ========
 export function loadStudents() {
-    // console.log("Loading students from DB_FILE:", DB_FILE);
-  if (!fs.existsSync(DB_FILE)) return {};
+    console.log("Loading students from DB_FILE:", DB_FILE);
+  if (!fs.existsSync(DB_FILE)) {
+    console.log("DB_FILE does not exist, returning empty object");
+    return {}
+  };
   const data = fs.readFileSync(DB_FILE, "utf-8");
+  console.log("Students data loaded:", data);
   return JSON.parse(data);
 }
 
@@ -75,7 +41,7 @@ export function getRoleFromCourse(course) {
 }
 
 // ======== Account Creation ========
-export function createStudentAccount(
+export function createStudentAccount({
   studentId,
   firstName,
   middleName,
@@ -85,18 +51,20 @@ export function createStudentAccount(
   password,
   email,
   role = null
-) {
+}) {
+  console.log("Creating student account for ID:", studentId);
   const students = loadStudents();
 
   if (students[studentId]) {
+    console.log("Student ID already exists");
     return { error: "Student ID already exists" };
   }
 
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const encryptedName = encryptData(`${firstName} ${middleName} ${lastName}`);
-  const encryptedYear = encryptData(year);
-  const encryptedCourse = encryptData(course);
-  const encryptedEmail = encryptData(email);
+  const hashedPassword = password;
+  const encryptedName = `${firstName} ${middleName} ${lastName}`;
+  const encryptedYear = year;
+  const encryptedCourse = course;
+  const encryptedEmail = email;
 
   const assignedRole = role || getRoleFromCourse(course);
 
@@ -109,6 +77,7 @@ export function createStudentAccount(
     role: assignedRole,
   };
 
+  console.log("New student data:", students[studentId]);
   saveStudents(students);
 
   return {
@@ -122,7 +91,8 @@ export function createStudentAccount(
 export function verifyPassword(studentId, password) {
   const students = loadStudents();
   if (!students[studentId]) return false;
-  return bcrypt.compareSync(password, students[studentId].password);
+  if (students[studentId].password === password) return true;
+  
 }
 
 // ======== Student Info ========

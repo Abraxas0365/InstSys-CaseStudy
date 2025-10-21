@@ -3,14 +3,14 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { loadStudents, decryptData, verifyPassword, mapStudentRole } from "../utils/RBAC.js";
+import { loadStudents, verifyPassword, mapStudentRole } from "../utils/RBAC.js";
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const __outdirname = path.dirname(__dirname);
 
-const ROLE_ASSIGN_FILE = path.join(__outdirname, "../src/accounts/last_role_assign.json");
+const ROLE_ASSIGN_FILE = path.join(__outdirname, "../express-backend/src/accounts/last_role_assign.json");
 
 console.log("🔹 Login route initialized");
 
@@ -20,7 +20,7 @@ router.post("/login", async (req, res) => {
 
   // Guest login special case
   if (studentId === "PDM-0000-000000") {
-    const guestFile = path.join(__outdirname, "../src/accounts/guest.json");
+    const guestFile = path.join(__outdirname, "../express-backend/src/accounts/guest.json");
 
     try {
       const guestData = JSON.parse(fs.readFileSync(guestFile, "utf-8"));
@@ -53,7 +53,8 @@ router.post("/login", async (req, res) => {
   }
 
   // Decrypt and compare email
-  const storedEmail = decryptData(students[studentId].email || "");
+  const storedEmail = students[studentId].email;
+  console.log("Verifying email:", email, "against stored:", storedEmail);
   if (email !== storedEmail) {
     return res.status(401).json({ error: "Email does not match" });
   }
@@ -65,7 +66,7 @@ router.post("/login", async (req, res) => {
   }
 
   // Determine role
-  const studentRole = students[studentId].role || "student";
+  const studentRole = students[studentId].role;
 
   if (studentRole.toLowerCase() === "admin") {
     fs.writeFileSync(

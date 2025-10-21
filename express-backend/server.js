@@ -3,6 +3,7 @@ import axios from "axios";
 import cors from "cors";
 import loginRoute from "./routes/loginRoute.js";
 import guestRoute from "./routes/guestRoute.js";
+import registerRoute from "./routes/registerRoute.js";
 import refreshCollections from "./routes/refreshCollections.js";
 import { callPythonAPI, configPythonAPI } from "./API/PythonAPI.js";
 
@@ -30,6 +31,7 @@ app.get("/health", (req, res) => {
 app.use("/", loginRoute);
 app.use("/student", guestRoute);
 app.use("/", refreshCollections);
+app.use("/", registerRoute);
 
 // ✅ Example endpoint that talks to Python
 app.get("/v1/chat/prompt", async (req, res) => {
