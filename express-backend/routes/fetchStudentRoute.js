@@ -5,7 +5,7 @@ import { loadStudents } from "../utils/RBAC.js"; // adjust paths
 import { fileURLToPath } from "url";
 
 const router = express.Router();
-console.log("🔹 Guest route initialized");
+console.log("🔹 Fetch Student route initialized");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +15,7 @@ const ACCOUNTS_DIR = path.join(__dirname, "..src/accounts");
 router.get("/:student_id", async (req, res) => {
   try {
     const studentId = req.params.student_id;
-    console.log("✅ Guest route hit with ID:", studentId);
+    console.log("✅ fetch student route hit with ID:", studentId);
 
     let students = loadStudents();
     // console.log("All students loaded:", students);

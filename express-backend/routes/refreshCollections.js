@@ -12,7 +12,7 @@ const __outdirname = path.dirname(__dirname);
 
 const ROLE_ASSIGN_FILE = path.join(
   __outdirname,
-  "/src/accounts/last_role_assign.json"
+  "/src/config/last_role_assign.json"
 );
 
 // console.log("ROLE_ASSIGN_FILE path:", ROLE_ASSIGN_FILE);

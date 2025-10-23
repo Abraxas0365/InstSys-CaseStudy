@@ -1,11 +1,11 @@
 {
   "PDM-2023-003183": {
-    "studentName": "Jhervin Mungcal",
-    "year": "3",
-    "course": "",
-    "email": "email@email.com",
+    "studentName": "Jhervin Agustin Mungcal",
+    "year": "Third Year",
+    "course": "Bachelor of Science in Computer Science (BSCS)",
+    "email": "jhervinmungcal101@gmail.com",
     "password": "123",
-    "role": "student CS"
+    "role": "admin"
   },
   "[object Object]": {
     "studentName": "undefined undefined undefined",

@@ -160,6 +160,7 @@ function Register({ goLogin }) {
     }
 
     if (!file || !descriptor) {
+      console.log("file: ", file, "\ndescriptor: ", descriptor);
       showPopup("error", "⚠ Please upload a face photo before registering.");
       return;
     }

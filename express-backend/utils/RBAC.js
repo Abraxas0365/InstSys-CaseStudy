@@ -8,17 +8,17 @@ const __outdirname = path.dirname(__dirname);
 
 // ======== Database Path ========
 const BASE_DIR = path.join(__outdirname);
-const DB_FILE = path.join(BASE_DIR, "../express-backend/src/accounts/students.json");
+const DB_FILE = path.join(BASE_DIR, "../express-backend/src/config/students.json");
 
 // ======== File I/O Helpers ========
 export function loadStudents() {
-    console.log("Loading students from DB_FILE:", DB_FILE);
+    // console.log("Loading students from DB_FILE:", DB_FILE);
   if (!fs.existsSync(DB_FILE)) {
     console.log("DB_FILE does not exist, returning empty object");
     return {}
   };
   const data = fs.readFileSync(DB_FILE, "utf-8");
-  console.log("Students data loaded:", data);
+  // console.log("Students data loaded:", data);
   return JSON.parse(data);
 }
 

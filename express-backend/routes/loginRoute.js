@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const __outdirname = path.dirname(__dirname);
 
-const ROLE_ASSIGN_FILE = path.join(__outdirname, "../express-backend/src/accounts/last_role_assign.json");
+const ROLE_ASSIGN_FILE = path.join(__outdirname, "../express-backend/src/config/last_role_assign.json");
 
 console.log("🔹 Login route initialized");
 
@@ -20,7 +20,7 @@ router.post("/login", async (req, res) => {
 
   // Guest login special case
   if (studentId === "PDM-0000-000000") {
-    const guestFile = path.join(__outdirname, "../express-backend/src/accounts/guest.json");
+    const guestFile = path.join(__outdirname, "../express-backend/src/config/guest.json");
 
     try {
       const guestData = JSON.parse(fs.readFileSync(guestFile, "utf-8"));

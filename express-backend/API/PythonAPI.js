@@ -31,7 +31,7 @@ export async function configPythonAPI(collection) {
 
     return response.data;
   } catch (error) {
-    console.error("Error sending collection:", error.message);
+    console.error("Error sending collection:", error.message, "from Python API");
     throw error;
   }
 }

@@ -5,6 +5,7 @@ import loginRoute from "./routes/loginRoute.js";
 import fetchStudentRoute from "./routes/fetchStudentRoute.js";
 import registerRoute from "./routes/registerRoute.js";
 import refreshCollections from "./routes/refreshCollections.js";
+import coursesRoute from "./routes/coursesRoute.js";
 import { callPythonAPI, configPythonAPI } from "./API/PythonAPI.js";
 
 const app = express();
@@ -32,6 +33,7 @@ app.use("/", loginRoute);
 app.use("/student", fetchStudentRoute);
 app.use("/", refreshCollections);
 app.use("/", registerRoute);
+app.use("/", coursesRoute);
 
 // ✅ Example endpoint that talks to Python
 app.post("/v1/chat/prompt", async (req, res) => {
